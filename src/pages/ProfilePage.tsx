@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { LogOut, Pencil, Search, Store, Trash2, Truck } from "lucide-react"
 import { Navigate, useNavigate } from "react-router-dom"
 import { BookCard } from "@/components/books/BookCard"
@@ -10,15 +10,16 @@ import { Card, CardContent } from "@/components/ui/card"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/context/AuthContext"
-import { api, ApiError, type Book } from "@/lib/api"
+import { api, ApiError, cacheKeys, type Book } from "@/lib/api"
+import { useCachedQuery } from "@/lib/useCachedQuery"
+
+const MY_BOOKS_TTL_MS = 60_000
 
 export function ProfilePage() {
   const { user, logout, refreshUser } = useAuth()
   const navigate = useNavigate()
-  const [books, setBooks] = useState<Book[]>([])
   const [bookSearch, setBookSearch] = useState("")
   const [editing, setEditing] = useState<Book | null>(null)
-  const [loading, setLoading] = useState(true)
   const [editingShipping, setEditingShipping] = useState(false)
   const [shippingDraft, setShippingDraft] = useState<string[]>([])
   const [savingShipping, setSavingShipping] = useState(false)
@@ -26,6 +27,18 @@ export function ProfilePage() {
   const [deletingBook, setDeletingBook] = useState<Book | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [confirmLogout, setConfirmLogout] = useState(false)
+
+  const {
+    data: booksData,
+    loading,
+    refetch: refetchBooks,
+  } = useCachedQuery<Book[]>({
+    key: user ? cacheKeys.myBooks() : null,
+    fetcher: () => api.myBooks(),
+    ttlMs: MY_BOOKS_TTL_MS,
+    enabled: !!user,
+  })
+  const books = booksData ?? []
 
   const filteredBooks = useMemo(() => {
     const q = bookSearch.trim().toLowerCase()
@@ -55,20 +68,6 @@ export function ProfilePage() {
     }
   }
 
-  const load = useCallback(async () => {
-    if (!user) return
-    setLoading(true)
-    try {
-      setBooks(await api.myBooks())
-    } finally {
-      setLoading(false)
-    }
-  }, [user])
-
-  useEffect(() => {
-    load()
-  }, [load])
-
   if (user?.is_admin) {
     return <Navigate to="/admin" replace />
   }
@@ -87,7 +86,7 @@ export function ProfilePage() {
     if (!editing) return
     await api.updateBook(editing.id, { ...data, descripcion: data.descripcion || undefined })
     setEditing(null)
-    await load()
+    await refetchBooks()
   }
 
   const confirmDelete = async () => {
@@ -96,7 +95,7 @@ export function ProfilePage() {
     try {
       await api.deleteBook(deletingBook.id)
       setDeletingBook(null)
-      await load()
+      await refetchBooks()
     } finally {
       setDeleting(false)
     }

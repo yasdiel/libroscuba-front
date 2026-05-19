@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react"
+import { cacheClear } from "@/lib/cache"
 import { api, type User } from "@/lib/api"
 
 interface AuthContextValue {
@@ -54,17 +55,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (whatsapp_number: string, password: string) => {
     const { access_token } = await api.login(whatsapp_number, password)
     localStorage.setItem("lc_token", access_token)
+    cacheClear()
     await refreshUser()
   }
 
   const register = async (data: Parameters<AuthContextValue["register"]>[0]) => {
     const { access_token } = await api.register(data)
     localStorage.setItem("lc_token", access_token)
+    cacheClear()
     await refreshUser()
   }
 
   const logout = () => {
     localStorage.removeItem("lc_token")
+    cacheClear()
     setUser(null)
   }
 

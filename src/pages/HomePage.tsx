@@ -1,82 +1,103 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { BookOpen, Loader2, Search } from "lucide-react"
 import { BookCard } from "@/components/books/BookCard"
 import { BookSheet } from "@/components/books/BookSheet"
 import { LocationFilter } from "@/components/filters/LocationFilter"
 import { Input } from "@/components/ui/input"
-import { api, ApiError, type Book } from "@/lib/api"
+import { api, cacheKeys, type Book } from "@/lib/api"
+import { useCachedQuery } from "@/lib/useCachedQuery"
 
 const PAGE_SIZE = 40
+// La cache de la primera página se considera fresca 60 s.
+// Tras eso, al volver al home, vuelve a pedirla en segundo plano.
+const BOOKS_TTL_MS = 60_000
 
 export function HomePage() {
-  const [books, setBooks] = useState<Book[]>([])
-  const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [provincia, setProvincia] = useState("")
   const [municipio, setMunicipio] = useState("")
+  const [searchInput, setSearchInput] = useState("")
   const [search, setSearch] = useState("")
+  const [extraBooks, setExtraBooks] = useState<Book[]>([])
+  const [hasMore, setHasMore] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [selected, setSelected] = useState<Book | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
 
-  // Token para descartar respuestas obsoletas si los filtros cambian a mitad de fetch.
-  const requestIdRef = useRef(0)
   const sentinelRef = useRef<HTMLDivElement | null>(null)
 
-  const loadFirstPage = useCallback(async () => {
-    const id = ++requestIdRef.current
-    setLoading(true)
-    setError(null)
+  // Debounce del campo de búsqueda → search efectivo.
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput.trim()), 300)
+    return () => clearTimeout(t)
+  }, [searchInput])
+
+  const filterParams = useMemo(
+    () => ({
+      provincia: provincia || undefined,
+      municipio: municipio || undefined,
+      q: search || undefined,
+      skip: 0,
+      limit: PAGE_SIZE,
+    }),
+    [provincia, municipio, search]
+  )
+
+  const {
+    data: firstPage,
+    loading,
+    isFetching,
+    error,
+    refetch,
+  } = useCachedQuery<Book[]>({
+    key: cacheKeys.books(filterParams),
+    fetcher: () => api.books(filterParams),
+    ttlMs: BOOKS_TTL_MS,
+  })
+
+  // Al cambiar filtros se reinicia el infinite scroll local.
+  useEffect(() => {
+    setExtraBooks([])
     setHasMore(true)
-    try {
-      const data = await api.books({
-        provincia: provincia || undefined,
-        municipio: municipio || undefined,
-        q: search || undefined,
-        skip: 0,
-        limit: PAGE_SIZE,
-      })
-      if (id !== requestIdRef.current) return
-      setBooks(data)
-      setHasMore(data.length === PAGE_SIZE)
-    } catch (e) {
-      if (id !== requestIdRef.current) return
-      setBooks([])
-      setHasMore(false)
-      setError(e instanceof ApiError ? e.message : "No se pudieron cargar los libros")
-    } finally {
-      if (id === requestIdRef.current) setLoading(false)
-    }
   }, [provincia, municipio, search])
+
+  // Si la primera página vino con menos de PAGE_SIZE, ya no hay más.
+  useEffect(() => {
+    if (firstPage && firstPage.length < PAGE_SIZE && extraBooks.length === 0) {
+      setHasMore(false)
+    }
+  }, [firstPage, extraBooks.length])
+
+  const books = useMemo<Book[]>(() => {
+    if (!firstPage) return []
+    if (extraBooks.length === 0) return firstPage
+    const seen = new Set(firstPage.map((b) => b.id))
+    const merged = [...firstPage]
+    for (const b of extraBooks) {
+      if (!seen.has(b.id)) {
+        seen.add(b.id)
+        merged.push(b)
+      }
+    }
+    return merged
+  }, [firstPage, extraBooks])
 
   const loadMore = useCallback(async () => {
     if (loading || loadingMore || !hasMore || error) return
-    const id = requestIdRef.current
+    if (!firstPage) return
     setLoadingMore(true)
     try {
       const data = await api.books({
-        provincia: provincia || undefined,
-        municipio: municipio || undefined,
-        q: search || undefined,
+        ...filterParams,
         skip: books.length,
-        limit: PAGE_SIZE,
       })
-      if (id !== requestIdRef.current) return
-      setBooks((prev) => [...prev, ...data])
-      setHasMore(data.length === PAGE_SIZE)
+      setExtraBooks((prev) => [...prev, ...data])
+      if (data.length < PAGE_SIZE) setHasMore(false)
     } catch {
-      if (id !== requestIdRef.current) return
       setHasMore(false)
     } finally {
-      if (id === requestIdRef.current) setLoadingMore(false)
+      setLoadingMore(false)
     }
-  }, [provincia, municipio, search, books.length, loading, loadingMore, hasMore, error])
-
-  useEffect(() => {
-    const t = setTimeout(loadFirstPage, 300)
-    return () => clearTimeout(t)
-  }, [loadFirstPage])
+  }, [filterParams, books.length, firstPage, loading, loadingMore, hasMore, error])
 
   useEffect(() => {
     const node = sentinelRef.current
@@ -96,6 +117,8 @@ export function HomePage() {
     setSheetOpen(true)
   }
 
+  const showStaleIndicator = isFetching && books.length > 0
+
   return (
     <div className="pb-4">
       <header className="bg-gradient-to-br from-brand to-brand-dark px-4 pb-6 pt-6 text-white rounded-b-3xl">
@@ -111,8 +134,8 @@ export function HomePage() {
           <Input
             className="border-0 bg-white pl-10 text-gray-900 shadow-lg"
             placeholder="Buscar por título o autor..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
         </div>
       </header>
@@ -128,19 +151,27 @@ export function HomePage() {
       </section>
 
       <section className="px-4">
-        <h2 className="mb-3 text-lg font-bold text-gray-900">
-          {search.trim() ? "Resultados" : "Recién llegados"}
-        </h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-900">
+            {search.trim() ? "Resultados" : "Recién llegados"}
+          </h2>
+          {showStaleIndicator && (
+            <span className="flex items-center gap-1 text-xs text-gray-400">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Actualizando
+            </span>
+          )}
+        </div>
         {loading ? (
           <p className="text-center text-gray-500 py-8">Cargando libros...</p>
-        ) : error ? (
+        ) : error && books.length === 0 ? (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-6 text-center text-sm text-red-800">
             <p className="font-medium mb-1">Error al cargar libros</p>
-            <p>{error}</p>
+            <p>{error.message}</p>
             <button
               type="button"
               className="mt-3 text-brand font-semibold underline"
-              onClick={() => loadFirstPage()}
+              onClick={() => refetch()}
             >
               Reintentar
             </button>

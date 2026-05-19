@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useMemo } from "react"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -7,7 +7,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { api, parseLocationsMap } from "@/lib/api"
+import { api, cacheKeys, parseLocationsMap } from "@/lib/api"
+import { useCachedQuery } from "@/lib/useCachedQuery"
 
 interface LocationFilterProps {
   provincia: string
@@ -18,6 +19,8 @@ interface LocationFilterProps {
   required?: boolean
 }
 
+const LOCATIONS_TTL_MS = 60 * 60 * 1000
+
 export function LocationFilter({
   provincia,
   municipio,
@@ -25,19 +28,14 @@ export function LocationFilter({
   onMunicipioChange,
   required = false,
 }: LocationFilterProps) {
-  const [locations, setLocations] = useState<Record<string, string[]>>({})
-  const [loading, setLoading] = useState(true)
+  const { data, loading } = useCachedQuery({
+    key: cacheKeys.locations(),
+    fetcher: () => api.locations(),
+    ttlMs: LOCATIONS_TTL_MS,
+  })
 
-  useEffect(() => {
-    setLoading(true)
-    api
-      .locations()
-      .then((data) => setLocations(parseLocationsMap(data)))
-      .catch(() => setLocations({}))
-      .finally(() => setLoading(false))
-  }, [])
-
-  const provincias = Object.keys(locations ?? {}).sort()
+  const locations = useMemo(() => (data ? parseLocationsMap(data) : {}), [data])
+  const provincias = Object.keys(locations).sort()
   const municipios = provincia ? locations[provincia] || [] : []
 
   return (

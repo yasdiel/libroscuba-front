@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { BookOpen, LogOut, MapPin, Search, Shield, Store, Trash2 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { Badge } from "@/components/ui/badge"
@@ -7,7 +7,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/context/AuthContext"
-import { api, type AdminStats, type Book, type Store as StoreType } from "@/lib/api"
+import { api, cacheKeys, type AdminStats, type Book, type Store as StoreType } from "@/lib/api"
+import { useCachedQuery } from "@/lib/useCachedQuery"
 import { cn, formatPrice } from "@/lib/utils"
 
 type PendingAction =
@@ -15,45 +16,56 @@ type PendingAction =
   | { kind: "store"; id: string; nombre: string; count: number }
   | { kind: "logout" }
 
+const ADMIN_TTL_MS = 30_000
+
 export function AdminPage() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const [stats, setStats] = useState<AdminStats | null>(null)
-  const [books, setBooks] = useState<Book[]>([])
-  const [stores, setStores] = useState<StoreType[]>([])
+  const [searchInput, setSearchInput] = useState("")
   const [search, setSearch] = useState("")
   const [tab, setTab] = useState<"books" | "stores">("books")
-  const [loading, setLoading] = useState(true)
   const [pending, setPending] = useState<PendingAction | null>(null)
   const [processing, setProcessing] = useState(false)
 
-  const loadStats = useCallback(async () => {
-    const s = await api.adminStats()
-    setStats(s)
-  }, [])
-
-  const loadList = useCallback(async () => {
-    setLoading(true)
-    try {
-      if (tab === "books") {
-        setBooks(await api.adminBooks(search || undefined))
-      } else {
-        setStores(await api.adminStores(search || undefined))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [search, tab])
-
   useEffect(() => {
-    if (user?.is_admin) loadStats()
-  }, [user, loadStats])
-
-  useEffect(() => {
-    if (!user?.is_admin) return
-    const t = setTimeout(loadList, 300)
+    const t = setTimeout(() => setSearch(searchInput.trim()), 300)
     return () => clearTimeout(t)
-  }, [user, loadList])
+  }, [searchInput])
+
+  const isAdmin = !!user?.is_admin
+
+  const { data: stats, refetch: refetchStats } = useCachedQuery<AdminStats>({
+    key: isAdmin ? cacheKeys.adminStats() : null,
+    fetcher: () => api.adminStats(),
+    ttlMs: ADMIN_TTL_MS,
+    enabled: isAdmin,
+  })
+
+  const {
+    data: booksData,
+    loading: loadingBooks,
+    refetch: refetchBooks,
+  } = useCachedQuery<Book[]>({
+    key: isAdmin && tab === "books" ? cacheKeys.adminBooks(search || undefined) : null,
+    fetcher: () => api.adminBooks(search || undefined),
+    ttlMs: ADMIN_TTL_MS,
+    enabled: isAdmin && tab === "books",
+  })
+
+  const {
+    data: storesData,
+    loading: loadingStores,
+    refetch: refetchStores,
+  } = useCachedQuery<StoreType[]>({
+    key: isAdmin && tab === "stores" ? cacheKeys.adminStores(search || undefined) : null,
+    fetcher: () => api.adminStores(search || undefined),
+    ttlMs: ADMIN_TTL_MS,
+    enabled: isAdmin && tab === "stores",
+  })
+
+  const books = booksData ?? []
+  const stores = storesData ?? []
+  const loading = tab === "books" ? loadingBooks : loadingStores
 
   if (!user?.is_admin) {
     return (
@@ -80,10 +92,10 @@ export function AdminPage() {
     try {
       if (pending.kind === "book") {
         await api.adminDeleteBook(pending.id)
-        await Promise.all([loadList(), loadStats()])
+        await Promise.all([refetchBooks(), refetchStats()])
       } else if (pending.kind === "store") {
         await api.adminDeleteStore(pending.id)
-        await Promise.all([loadList(), loadStats()])
+        await Promise.all([refetchStores(), refetchStats()])
       } else if (pending.kind === "logout") {
         logout()
         navigate("/")
@@ -183,6 +195,7 @@ export function AdminPage() {
               type="button"
               onClick={() => {
                 setTab(t)
+                setSearchInput("")
                 setSearch("")
               }}
               className={cn(
@@ -204,8 +217,8 @@ export function AdminPage() {
                 ? "Buscar por título o autor..."
                 : "Buscar por tienda, teléfono o ubicación..."
             }
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
         </div>
 

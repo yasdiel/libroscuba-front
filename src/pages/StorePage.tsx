@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { ArrowLeft, BookOpen, MapPin, MessageCircle, Search, Store as StoreIcon, Truck } from "lucide-react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { BookCard } from "@/components/books/BookCard"
@@ -7,54 +7,47 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { api, ApiError, type Book, type Store } from "@/lib/api"
+import { api, cacheKeys, type Book, type Store } from "@/lib/api"
+import { useCachedQuery } from "@/lib/useCachedQuery"
+
+const STORE_TTL_MS = 60_000
+const STORE_BOOKS_TTL_MS = 60_000
 
 export function StorePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const [store, setStore] = useState<Store | null>(null)
-  const [books, setBooks] = useState<Book[]>([])
+  const [searchInput, setSearchInput] = useState("")
   const [search, setSearch] = useState("")
-  const [loadingStore, setLoadingStore] = useState(true)
-  const [loadingBooks, setLoadingBooks] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Book | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
 
-  const loadStore = useCallback(async () => {
-    if (!id) return
-    setLoadingStore(true)
-    setError(null)
-    try {
-      setStore(await api.store(id))
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Tienda no encontrada")
-      setStore(null)
-    } finally {
-      setLoadingStore(false)
-    }
-  }, [id])
-
-  const loadBooks = useCallback(async () => {
-    if (!id) return
-    setLoadingBooks(true)
-    try {
-      setBooks(await api.storeBooks(id, search || undefined))
-    } catch {
-      setBooks([])
-    } finally {
-      setLoadingBooks(false)
-    }
-  }, [id, search])
-
   useEffect(() => {
-    loadStore()
-  }, [loadStore])
-
-  useEffect(() => {
-    const t = setTimeout(loadBooks, 250)
+    const t = setTimeout(() => setSearch(searchInput.trim()), 250)
     return () => clearTimeout(t)
-  }, [loadBooks])
+  }, [searchInput])
+
+  const {
+    data: store,
+    loading: loadingStore,
+    error: storeError,
+  } = useCachedQuery<Store>({
+    key: id ? cacheKeys.store(id) : null,
+    fetcher: () => api.store(id as string),
+    ttlMs: STORE_TTL_MS,
+    enabled: !!id,
+  })
+
+  const {
+    data: booksData,
+    loading: loadingBooks,
+  } = useCachedQuery<Book[]>({
+    key: id ? cacheKeys.storeBooks(id, search || undefined) : null,
+    fetcher: () => api.storeBooks(id as string, search || undefined),
+    ttlMs: STORE_BOOKS_TTL_MS,
+    enabled: !!id,
+  })
+
+  const books = booksData ?? []
 
   const openBook = (book: Book) => {
     setSelected(book)
@@ -71,11 +64,11 @@ export function StorePage() {
     return <p className="px-4 py-8 text-center text-gray-500">Cargando tienda...</p>
   }
 
-  if (error || !store) {
+  if (storeError || !store) {
     return (
       <div className="px-4 py-10 text-center space-y-3">
         <StoreIcon className="mx-auto h-10 w-10 text-gray-400" />
-        <p className="text-gray-600">{error ?? "Tienda no encontrada"}</p>
+        <p className="text-gray-600">{storeError?.message ?? "Tienda no encontrada"}</p>
         <Button variant="outline" onClick={() => navigate("/")}>
           Volver al inicio
         </Button>
@@ -153,8 +146,8 @@ export function StorePage() {
           <Input
             className="pl-10"
             placeholder="Buscar en esta tienda..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
         </div>
 

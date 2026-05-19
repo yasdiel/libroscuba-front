@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { Check, MapPin, Plus, Search, Truck, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -13,8 +13,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { api, parseLocationsMap } from "@/lib/api"
+import { api, cacheKeys, parseLocationsMap } from "@/lib/api"
+import { useCachedQuery } from "@/lib/useCachedQuery"
 import { cn } from "@/lib/utils"
+
+const LOCATIONS_TTL_MS = 60 * 60 * 1000
 
 interface MunicipiosEnvioSelectProps {
   value: string[]
@@ -33,18 +36,14 @@ export function MunicipiosEnvioSelect({
   hint = "Tu tienda aparecerá cuando alguien filtre por estos municipios.",
 }: MunicipiosEnvioSelectProps) {
   const [open, setOpen] = useState(false)
-  const [locations, setLocations] = useState<Record<string, string[]>>({})
-  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
 
-  useEffect(() => {
-    setLoading(true)
-    api
-      .locations()
-      .then((data) => setLocations(parseLocationsMap(data)))
-      .catch(() => setLocations({}))
-      .finally(() => setLoading(false))
-  }, [])
+  const { data, loading } = useCachedQuery({
+    key: cacheKeys.locations(),
+    fetcher: () => api.locations(),
+    ttlMs: LOCATIONS_TTL_MS,
+  })
+  const locations = useMemo(() => (data ? parseLocationsMap(data) : {}), [data])
 
   const filteredProvinces = useMemo(() => {
     const q = search.trim().toLowerCase()

@@ -1,6 +1,53 @@
+import { cacheInvalidate, cacheInvalidatePrefix } from "@/lib/cache"
 import { env } from "@/lib/env"
 
 const API_URL = env.apiUrl
+
+/** Builders de claves de cache. Una sola fuente de verdad para keys. */
+export const cacheKeys = {
+  locations: () => "GET /api/locations",
+  me: () => "GET /api/auth/me",
+  books: (params?: {
+    provincia?: string
+    municipio?: string
+    q?: string
+    skip?: number
+    limit?: number
+  }) => {
+    const sp = new URLSearchParams()
+    if (params?.provincia) sp.set("provincia", params.provincia)
+    if (params?.municipio) sp.set("municipio", params.municipio)
+    if (params?.q) sp.set("q", params.q)
+    if (params?.skip) sp.set("skip", String(params.skip))
+    if (params?.limit) sp.set("limit", String(params.limit))
+    const qs = sp.toString()
+    return `GET /api/books${qs ? `?${qs}` : ""}`
+  },
+  book: (id: string) => `GET /api/books/${id}`,
+  myBooks: () => "GET /api/users/me/books",
+  store: (id: string) => `GET /api/users/stores/${id}`,
+  storeBooks: (id: string, q?: string) =>
+    `GET /api/users/stores/${id}/books${q ? `?q=${q}` : ""}`,
+  adminStats: () => "GET /api/admin/stats",
+  adminBooks: (q?: string) => `GET /api/admin/books${q ? `?q=${q}` : ""}`,
+  adminStores: (q?: string) => `GET /api/admin/stores${q ? `?q=${q}` : ""}`,
+}
+
+/** Invalida todo lo que pueda haberse afectado tras modificar libros. */
+function invalidateBooks(): void {
+  cacheInvalidatePrefix("GET /api/books")
+  cacheInvalidate(cacheKeys.myBooks())
+  cacheInvalidatePrefix("GET /api/users/stores/")
+  cacheInvalidatePrefix("GET /api/admin/books")
+  cacheInvalidate(cacheKeys.adminStats())
+}
+
+/** Invalida lo que cambia al modificar tiendas/usuarios. */
+function invalidateStores(): void {
+  cacheInvalidatePrefix("GET /api/users/stores")
+  cacheInvalidatePrefix("GET /api/admin/stores")
+  cacheInvalidate(cacheKeys.adminStats())
+}
 
 export type EstadoLibro = "nuevo" | "usado"
 
@@ -207,20 +254,48 @@ export const api = {
     return request<Book[]>(`/api/books${qs ? `?${qs}` : ""}`)
   },
   book: (id: string) => request<Book>(`/api/books/${id}`),
-  createBook: (data: Omit<Book, "id" | "owner_id" | "fecha_creacion">) =>
-    request<Book>("/api/books", { method: "POST", body: JSON.stringify(data) }, true),
-  updateBook: (id: string, data: Partial<Book>) =>
-    request<Book>(`/api/books/${id}`, { method: "PUT", body: JSON.stringify(data) }, true),
-  deleteBook: (id: string) =>
-    request<void>(`/api/books/${id}`, { method: "DELETE" }, true),
+  createBook: async (data: Omit<Book, "id" | "owner_id" | "fecha_creacion">) => {
+    const res = await request<Book>(
+      "/api/books",
+      { method: "POST", body: JSON.stringify(data) },
+      true
+    )
+    invalidateBooks()
+    return res
+  },
+  updateBook: async (id: string, data: Partial<Book>) => {
+    const res = await request<Book>(
+      `/api/books/${id}`,
+      { method: "PUT", body: JSON.stringify(data) },
+      true
+    )
+    invalidateBooks()
+    cacheInvalidate(cacheKeys.book(id))
+    return res
+  },
+  deleteBook: async (id: string) => {
+    await request<void>(`/api/books/${id}`, { method: "DELETE" }, true)
+    invalidateBooks()
+    cacheInvalidate(cacheKeys.book(id))
+  },
   myBooks: () => request<Book[]>("/api/users/me/books", {}, true),
   store: (id: string) => request<Store>(`/api/users/stores/${id}`),
   storeBooks: (id: string, q?: string) =>
     request<Book[]>(
       `/api/users/stores/${id}/books${q ? `?q=${encodeURIComponent(q)}` : ""}`
     ),
-  updateProfile: (data: Partial<User>) =>
-    request<User>("/api/users/me", { method: "PUT", body: JSON.stringify(data) }, true),
+  updateProfile: async (data: Partial<User>) => {
+    const res = await request<User>(
+      "/api/users/me",
+      { method: "PUT", body: JSON.stringify(data) },
+      true
+    )
+    cacheInvalidate(cacheKeys.me())
+    invalidateStores()
+    // El cambio de ubicación/envío del dueño afecta las búsquedas de libros.
+    invalidateBooks()
+    return res
+  },
   uploadSignature: () =>
     request<{
       signature: string
@@ -234,10 +309,16 @@ export const api = {
     request<Book[]>(`/api/admin/books${q ? `?q=${encodeURIComponent(q)}` : ""}`, {}, true),
   adminStores: (q?: string) =>
     request<Store[]>(`/api/admin/stores${q ? `?q=${encodeURIComponent(q)}` : ""}`, {}, true),
-  adminDeleteBook: (id: string) =>
-    request<void>(`/api/admin/books/${id}`, { method: "DELETE" }, true),
-  adminDeleteStore: (id: string) =>
-    request<void>(`/api/admin/stores/${id}`, { method: "DELETE" }, true),
+  adminDeleteBook: async (id: string) => {
+    await request<void>(`/api/admin/books/${id}`, { method: "DELETE" }, true)
+    invalidateBooks()
+    cacheInvalidate(cacheKeys.book(id))
+  },
+  adminDeleteStore: async (id: string) => {
+    await request<void>(`/api/admin/stores/${id}`, { method: "DELETE" }, true)
+    invalidateStores()
+    invalidateBooks()
+  },
 }
 
 export { ApiError }
