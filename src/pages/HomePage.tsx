@@ -5,10 +5,11 @@ import { BookCardSkeletonGrid, bookCardGridClass } from "@/components/books/Book
 import { BookSheet } from "@/components/books/BookSheet"
 import { LocationFilter } from "@/components/filters/LocationFilter"
 import { Input } from "@/components/ui/input"
+import { CATALOG_PAGE_SIZE } from "@/lib/catalog"
 import { api, cacheKeys, type Book } from "@/lib/api"
 import { useCachedQuery } from "@/lib/useCachedQuery"
 
-const PAGE_SIZE = 40
+const PAGE_SIZE = CATALOG_PAGE_SIZE
 // La cache de la primera página se considera fresca 60 s.
 // Tras eso, al volver al home, vuelve a pedirla en segundo plano.
 const BOOKS_TTL_MS = 60_000

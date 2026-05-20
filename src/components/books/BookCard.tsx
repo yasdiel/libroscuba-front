@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import type { Book } from "@/lib/api"
-import { cn, formatPrice, whatsappBuyLink } from "@/lib/utils"
+import { bookListCoverUrl, cn, formatPrice, whatsappBuyLink } from "@/lib/utils"
 
 interface BookCardProps {
   book: Book
@@ -35,7 +35,11 @@ export function BookCard({ book, onClick, actions, className, eagerCover = false
       }
     >
       <div className="aspect-[4/5] w-full overflow-hidden">
-        <BookCover src={book.foto_url} alt={book.titulo} eager={eagerCover} />
+        <BookCover
+          src={bookListCoverUrl(book.foto_url)}
+          alt={book.titulo}
+          eager={eagerCover}
+        />
       </div>
       <div className="p-3 space-y-2">
         <div className="flex items-start justify-between gap-2">

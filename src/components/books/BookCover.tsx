@@ -49,10 +49,7 @@ export function BookCover({ src, alt, className, eager = false }: BookCoverProps
         decoding="async"
         onLoad={() => setStatus("loaded")}
         onError={() => setStatus("error")}
-        className={cn(
-          "h-full w-full object-cover transition-opacity duration-200",
-          status === "loaded" ? "opacity-100" : "opacity-0"
-        )}
+        className="h-full w-full object-cover"
       />
     </div>
   )
