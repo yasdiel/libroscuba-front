@@ -1,10 +1,12 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { LogOut, Pencil, Search, Store, Trash2, Truck } from "lucide-react"
 import { Navigate, useNavigate } from "react-router-dom"
 import { BookCard } from "@/components/books/BookCard"
 import { BookCardSkeletonGrid } from "@/components/books/BookCardSkeleton"
 import { BookForm, type BookFormData } from "@/components/books/BookForm"
 import { MunicipiosEnvioSelect } from "@/components/filters/MunicipiosEnvioSelect"
+import { StoreAvatar } from "@/components/stores/StoreAvatar"
+import { StorePhotoUpload } from "@/components/stores/StorePhotoUpload"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -28,6 +30,39 @@ export function ProfilePage() {
   const [deletingBook, setDeletingBook] = useState<Book | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [confirmLogout, setConfirmLogout] = useState(false)
+  const [fotoTiendaUrl, setFotoTiendaUrl] = useState("")
+  const [savingPhoto, setSavingPhoto] = useState(false)
+  const [photoError, setPhotoError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setFotoTiendaUrl(user?.foto_tienda_url ?? "")
+  }, [user?.foto_tienda_url])
+
+  const saveStorePhoto = async (url: string) => {
+    const normalized = url.trim()
+    const current = user?.foto_tienda_url ?? ""
+    if (normalized === current) return
+    setSavingPhoto(true)
+    setPhotoError(null)
+    try {
+      await api.updateProfile({
+        foto_tienda_url: normalized ? normalized : null,
+      })
+      await refreshUser()
+    } catch (err) {
+      setPhotoError(
+        err instanceof ApiError ? err.message : "No se pudo guardar la foto de la tienda"
+      )
+      setFotoTiendaUrl(current)
+    } finally {
+      setSavingPhoto(false)
+    }
+  }
+
+  const handleStorePhotoChange = (url: string) => {
+    setFotoTiendaUrl(url)
+    void saveStorePhoto(url)
+  }
 
   const {
     data: booksData,
@@ -118,10 +153,17 @@ export function ProfilePage() {
 
   return (
     <div className="px-4 py-4 space-y-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-brand">Mi tienda</p>
-          <h1 className="text-2xl font-bold">{user.nombre_tienda}</h1>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <StoreAvatar
+            nombreTienda={user.nombre_tienda}
+            fotoUrl={fotoTiendaUrl || user.foto_tienda_url}
+            size="lg"
+          />
+          <div className="min-w-0">
+            <p className="text-xs font-medium uppercase tracking-wide text-brand">Mi tienda</p>
+            <h1 className="text-2xl font-bold truncate">{user.nombre_tienda}</h1>
+          </div>
         </div>
         <Button
           variant="ghost"
@@ -132,6 +174,20 @@ export function ProfilePage() {
           <LogOut className="h-5 w-5" />
         </Button>
       </div>
+
+      <Card>
+        <CardContent className="space-y-3 p-4">
+          <StorePhotoUpload
+            value={fotoTiendaUrl}
+            onChange={handleStorePhotoChange}
+            disabled={savingPhoto}
+          />
+          {savingPhoto && (
+            <p className="text-xs text-gray-500">Guardando foto...</p>
+          )}
+          {photoError && <p className="text-sm text-red-600">{photoError}</p>}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="space-y-2 text-sm">

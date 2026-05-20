@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/context/AuthContext"
+import { StoreAvatar } from "@/components/stores/StoreAvatar"
 import { api, cacheKeys, type AdminStats, type Book, type Store as StoreType } from "@/lib/api"
 import { useCachedQuery } from "@/lib/useCachedQuery"
 import { cn, formatPrice } from "@/lib/utils"
@@ -268,9 +269,12 @@ export function AdminPage() {
                 className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
               >
                 <div className="flex items-start gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-light">
-                    <Store className="h-5 w-5 text-brand" />
-                  </div>
+                  <StoreAvatar
+                    nombreTienda={store.nombre_tienda}
+                    fotoUrl={store.foto_tienda_url}
+                    size="sm"
+                    className="rounded-xl"
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <p className="font-semibold text-gray-900">{store.nombre_tienda}</p>

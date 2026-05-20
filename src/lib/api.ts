@@ -59,6 +59,7 @@ export interface User {
   nombre_tienda: string
   municipios_envio: string[]
   is_admin: boolean
+  foto_tienda_url?: string | null
 }
 
 export interface Book {
@@ -87,6 +88,7 @@ export interface Store {
   whatsapp_number: string
   municipios_envio: string[]
   book_count: number
+  foto_tienda_url?: string | null
 }
 
 export interface AdminStats {
@@ -284,7 +286,9 @@ export const api = {
     request<Book[]>(
       `/api/users/stores/${id}/books${q ? `?q=${encodeURIComponent(q)}` : ""}`
     ),
-  updateProfile: async (data: Partial<User>) => {
+  updateProfile: async (
+    data: Partial<User> & { foto_tienda_url?: string | null }
+  ) => {
     const res = await request<User>(
       "/api/users/me",
       { method: "PUT", body: JSON.stringify(data) },
@@ -296,14 +300,18 @@ export const api = {
     invalidateBooks()
     return res
   },
-  uploadSignature: () =>
+  uploadSignature: (folder = "libroscuba") =>
     request<{
       signature: string
       timestamp: number
       api_key: string
       cloud_name: string
       folder: string
-    }>("/api/upload/signature", {}, true),
+    }>(
+      `/api/upload/signature?folder=${encodeURIComponent(folder)}`,
+      {},
+      true
+    ),
   adminStats: () => request<AdminStats>("/api/admin/stats", {}, true),
   adminBooks: (q?: string) =>
     request<Book[]>(`/api/admin/books${q ? `?q=${encodeURIComponent(q)}` : ""}`, {}, true),

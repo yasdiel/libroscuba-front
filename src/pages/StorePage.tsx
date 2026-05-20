@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { StoreAvatar } from "@/components/stores/StoreAvatar"
 import { api, cacheKeys, type Book, type Store } from "@/lib/api"
 import { useCachedQuery } from "@/lib/useCachedQuery"
 
@@ -77,8 +78,6 @@ export function StorePage() {
     )
   }
 
-  const initial = store.nombre_tienda.charAt(0).toUpperCase()
-
   return (
     <div className="pb-6">
       <header className="bg-gradient-to-br from-brand to-brand-dark px-4 pb-6 pt-4 text-white rounded-b-3xl">
@@ -90,9 +89,12 @@ export function StorePage() {
           Volver
         </Link>
         <div className="flex items-start gap-3">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-2xl font-bold backdrop-blur">
-            {initial}
-          </div>
+          <StoreAvatar
+            nombreTienda={store.nombre_tienda}
+            fotoUrl={store.foto_tienda_url}
+            size="md"
+            onDark
+          />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium uppercase tracking-wide text-white/80">Tienda</p>
             <h1 className="text-xl font-bold leading-tight">{store.nombre_tienda}</h1>
