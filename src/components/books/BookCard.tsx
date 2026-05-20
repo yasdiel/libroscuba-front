@@ -1,4 +1,5 @@
 import { MapPin, ShoppingBag } from "lucide-react"
+import { BookCover } from "@/components/books/BookCover"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -10,9 +11,11 @@ interface BookCardProps {
   onClick?: () => void
   actions?: React.ReactNode
   className?: string
+  /** Prioriza la carga de la portada (primeras tarjetas visibles). */
+  eagerCover?: boolean
 }
 
-export function BookCard({ book, onClick, actions, className }: BookCardProps) {
+export function BookCard({ book, onClick, actions, className, eagerCover = false }: BookCardProps) {
   const buyLink = book.vendedor_whatsapp
     ? whatsappBuyLink(book.vendedor_whatsapp, book.titulo, book.autor)
     : null
@@ -31,13 +34,8 @@ export function BookCard({ book, onClick, actions, className }: BookCardProps) {
           : undefined
       }
     >
-      <div className="aspect-[4/5] w-full overflow-hidden bg-gray-100">
-        <img
-          src={book.foto_url}
-          alt={book.titulo}
-          className="h-full w-full object-cover"
-          loading="lazy"
-        />
+      <div className="aspect-[4/5] w-full overflow-hidden">
+        <BookCover src={book.foto_url} alt={book.titulo} eager={eagerCover} />
       </div>
       <div className="p-3 space-y-2">
         <div className="flex items-start justify-between gap-2">

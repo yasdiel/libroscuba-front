@@ -1,3 +1,4 @@
+import { BookCover } from "@/components/books/BookCover"
 import { ChevronRight, MapPin, ShoppingBag, Store as StoreIcon, Truck } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { Badge } from "@/components/ui/badge"
@@ -43,8 +44,8 @@ export function BookSheet({ book, open, onOpenChange }: BookSheetProps) {
           </SheetDescription>
         </SheetHeader>
         <SheetBody className="space-y-4 pb-8">
-          <div className="aspect-[4/3] overflow-hidden rounded-2xl bg-gray-100">
-            <img src={book.foto_url} alt={book.titulo} className="h-full w-full object-cover" />
+          <div className="aspect-[4/3] overflow-hidden rounded-2xl">
+            <BookCover src={book.foto_url} alt={book.titulo} eager />
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge>{book.estado === "nuevo" ? "Nuevo" : "Usado"}</Badge>

@@ -181,8 +181,13 @@ export function HomePage() {
         ) : (
           <>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-              {books.map((book) => (
-                <BookCard key={book.id} book={book} onClick={() => openBook(book)} />
+              {books.map((book, index) => (
+                <BookCard
+                  key={book.id}
+                  book={book}
+                  onClick={() => openBook(book)}
+                  eagerCover={index < 6}
+                />
               ))}
             </div>
             <div ref={sentinelRef} className="h-1" aria-hidden />
