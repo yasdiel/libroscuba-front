@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { ArrowLeft, BookOpen, MapPin, MessageCircle, Search, Store as StoreIcon, Truck } from "lucide-react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { BookCard } from "@/components/books/BookCard"
+import { BookCardSkeletonGrid, bookCardGridClass } from "@/components/books/BookCardSkeleton"
 import { BookSheet } from "@/components/books/BookSheet"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -156,7 +157,9 @@ export function StorePage() {
         </h2>
 
         {loadingBooks ? (
-          <p className="py-8 text-center text-gray-500">Cargando libros...</p>
+          <BookCardSkeletonGrid
+            count={Math.min(Math.max(store.book_count, 4), 40)}
+          />
         ) : books.length === 0 ? (
           <p className="py-8 text-center text-sm text-gray-500">
             {search.trim()
@@ -164,7 +167,7 @@ export function StorePage() {
               : "Esta tienda aún no tiene libros publicados."}
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+          <div className={bookCardGridClass}>
             {books.map((book) => (
               <BookCard key={book.id} book={book} onClick={() => openBook(book)} />
             ))}

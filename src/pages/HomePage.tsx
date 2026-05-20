@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { BookOpen, Loader2, Search } from "lucide-react"
 import { BookCard } from "@/components/books/BookCard"
+import { BookCardSkeletonGrid, bookCardGridClass } from "@/components/books/BookCardSkeleton"
 import { BookSheet } from "@/components/books/BookSheet"
 import { LocationFilter } from "@/components/filters/LocationFilter"
 import { Input } from "@/components/ui/input"
@@ -163,7 +164,7 @@ export function HomePage() {
           )}
         </div>
         {loading ? (
-          <p className="text-center text-gray-500 py-8">Cargando libros...</p>
+          <BookCardSkeletonGrid count={PAGE_SIZE} />
         ) : error && books.length === 0 ? (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-6 text-center text-sm text-red-800">
             <p className="font-medium mb-1">Error al cargar libros</p>
@@ -180,7 +181,7 @@ export function HomePage() {
           <p className="text-center text-gray-500 py-8">No hay libros con estos filtros.</p>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+            <div className={bookCardGridClass}>
               {books.map((book, index) => (
                 <BookCard
                   key={book.id}
@@ -191,12 +192,7 @@ export function HomePage() {
               ))}
             </div>
             <div ref={sentinelRef} className="h-1" aria-hidden />
-            {loadingMore && (
-              <p className="flex items-center justify-center gap-2 py-6 text-sm text-gray-500">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Cargando más libros...
-              </p>
-            )}
+            {loadingMore && <BookCardSkeletonGrid count={8} className="mt-3" />}
             {!hasMore && !loadingMore && books.length > PAGE_SIZE && (
               <p className="py-6 text-center text-xs text-gray-400">
                 Has visto los {books.length} libros disponibles.

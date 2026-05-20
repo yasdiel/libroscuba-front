@@ -2,6 +2,7 @@ import { useMemo, useState } from "react"
 import { LogOut, Pencil, Search, Store, Trash2, Truck } from "lucide-react"
 import { Navigate, useNavigate } from "react-router-dom"
 import { BookCard } from "@/components/books/BookCard"
+import { BookCardSkeletonGrid } from "@/components/books/BookCardSkeleton"
 import { BookForm, type BookFormData } from "@/components/books/BookForm"
 import { MunicipiosEnvioSelect } from "@/components/filters/MunicipiosEnvioSelect"
 import { Badge } from "@/components/ui/badge"
@@ -219,7 +220,11 @@ export function ProfilePage() {
           </div>
         )}
         {loading ? (
-          <p className="text-gray-500">Cargando...</p>
+          <BookCardSkeletonGrid
+            count={6}
+            className="grid-cols-2 md:grid-cols-2 lg:grid-cols-2"
+            showButton={false}
+          />
         ) : books.length === 0 ? (
           <p className="text-gray-500 text-sm">Aún no tienes libros publicados.</p>
         ) : filteredBooks.length === 0 ? (
