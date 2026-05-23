@@ -1,5 +1,5 @@
-/** Parámetros de la primera página del catálogo (debe coincidir con HomePage). */
-export const CATALOG_PAGE_SIZE = 40
+/** Primera página del catálogo (debe coincidir con HomePage). Menos datos = respuesta más rápida. */
+export const CATALOG_PAGE_SIZE = 20
 
 export const defaultCatalogParams = {
   skip: 0,

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { BookOpen } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { LocationFilter } from "@/components/filters/LocationFilter"
@@ -19,8 +19,14 @@ import {
 } from "@/lib/phone"
 
 export function LoginPage() {
-  const { login, register } = useAuth()
+  const { user, loading: authLoading, login, register } = useAuth()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate(user.is_admin ? "/admin" : "/perfil", { replace: true })
+    }
+  }, [authLoading, user, navigate])
   const [mode, setMode] = useState<"login" | "register">("login")
   const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
@@ -104,6 +110,10 @@ export function LoginPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (authLoading || user) {
+    return <p className="px-4 py-8 text-center text-gray-500">Cargando sesión...</p>
   }
 
   return (

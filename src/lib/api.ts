@@ -1,3 +1,4 @@
+import { authToken } from "@/lib/authToken"
 import { cacheInvalidate, cacheInvalidatePrefix } from "@/lib/cache"
 import { env } from "@/lib/env"
 
@@ -157,7 +158,7 @@ function formatApiErrorDetail(detail: unknown): string {
 }
 
 function getToken(): string | null {
-  return localStorage.getItem("lc_token")
+  return authToken.get()
 }
 
 const REQUEST_TIMEOUT_MS = 15_000

@@ -183,17 +183,12 @@ export function HomePage() {
         ) : (
           <>
             <div className={bookCardGridClass}>
-              {books.map((book, index) => (
-                <BookCard
-                  key={book.id}
-                  book={book}
-                  onClick={() => openBook(book)}
-                  eagerCover={index < 6}
-                />
+              {books.map((book) => (
+                <BookCard key={book.id} book={book} onClick={() => openBook(book)} />
               ))}
             </div>
             <div ref={sentinelRef} className="h-1" aria-hidden />
-            {loadingMore && <BookCardSkeletonGrid count={8} className="mt-3" />}
+            {loadingMore && <BookCardSkeletonGrid count={4} className="mt-3" />}
             {!hasMore && !loadingMore && books.length > PAGE_SIZE && (
               <p className="py-6 text-center text-xs text-gray-400">
                 Has visto los {books.length} libros disponibles.

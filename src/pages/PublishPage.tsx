@@ -5,8 +5,13 @@ import { useAuth } from "@/context/AuthContext"
 import { api } from "@/lib/api"
 
 export function PublishPage() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const navigate = useNavigate()
+
+  if (loading) {
+    return <p className="px-4 py-8 text-center text-gray-500">Cargando sesión...</p>
+  }
+
   if (!user) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-6 text-center">

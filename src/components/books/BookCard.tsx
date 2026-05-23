@@ -11,11 +11,9 @@ interface BookCardProps {
   onClick?: () => void
   actions?: React.ReactNode
   className?: string
-  /** Prioriza la carga de la portada (primeras tarjetas visibles). */
-  eagerCover?: boolean
 }
 
-export function BookCard({ book, onClick, actions, className, eagerCover = false }: BookCardProps) {
+export function BookCard({ book, onClick, actions, className }: BookCardProps) {
   const buyLink = book.vendedor_whatsapp
     ? whatsappBuyLink(book.vendedor_whatsapp, book.titulo, book.autor)
     : null
@@ -35,11 +33,7 @@ export function BookCard({ book, onClick, actions, className, eagerCover = false
       }
     >
       <div className="aspect-[4/5] w-full overflow-hidden">
-        <BookCover
-          src={bookListCoverUrl(book.foto_url)}
-          alt={book.titulo}
-          eager={eagerCover}
-        />
+        <BookCover src={bookListCoverUrl(book.foto_url)} alt={book.titulo} />
       </div>
       <div className="p-3 space-y-2">
         <div className="flex items-start justify-between gap-2">

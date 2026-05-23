@@ -12,48 +12,77 @@ interface StorePhotoUploadProps {
   disabled?: boolean
 }
 
+function isHttpUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url)
+}
+
+async function uploadToCloudinary(file: File): Promise<string> {
+  const { cloudinaryCloudName: cloudName, cloudinaryUploadPreset: uploadPreset } = env
+
+  if (cloudName && uploadPreset) {
+    const form = new FormData()
+    form.append("file", file)
+    form.append("upload_preset", uploadPreset)
+    form.append("folder", "libroscuba/tiendas")
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      { method: "POST", body: form }
+    )
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as {
+        error?: { message?: string }
+      } | null
+      throw new Error(body?.error?.message ?? "No se pudo subir la imagen a Cloudinary")
+    }
+    const data = await res.json()
+    return data.secure_url as string
+  }
+
+  const sig = await api.uploadSignature("libroscuba/tiendas")
+  const form = new FormData()
+  form.append("file", file)
+  form.append("api_key", sig.api_key)
+  form.append("timestamp", String(sig.timestamp))
+  form.append("signature", sig.signature)
+  form.append("folder", sig.folder)
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${sig.cloud_name}/image/upload`,
+    { method: "POST", body: form }
+  )
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as {
+      error?: { message?: string }
+    } | null
+    throw new Error(body?.error?.message ?? "No se pudo subir la imagen")
+  }
+  const data = await res.json()
+  return data.secure_url as string
+}
+
 export function StorePhotoUpload({ value, onChange, disabled }: StorePhotoUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
-  const { cloudinaryCloudName: cloudName, cloudinaryUploadPreset: uploadPreset } = env
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   const uploadFile = async (file: File) => {
+    if (file.size > 8 * 1024 * 1024) {
+      setUploadError("La imagen no puede superar 8 MB.")
+      return
+    }
     setUploading(true)
+    setUploadError(null)
     try {
-      if (cloudName && uploadPreset) {
-        const form = new FormData()
-        form.append("file", file)
-        form.append("upload_preset", uploadPreset)
-        form.append("folder", "libroscuba/tiendas")
-        const res = await fetch(
-          `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-          { method: "POST", body: form }
-        )
-        if (!res.ok) throw new Error("Error al subir imagen")
-        const data = await res.json()
-        onChange(data.secure_url)
-        return
+      const url = await uploadToCloudinary(file)
+      if (!isHttpUrl(url)) {
+        throw new Error("URL de imagen inválida")
       }
-      const sig = await api.uploadSignature("libroscuba/tiendas")
-      const form = new FormData()
-      form.append("file", file)
-      form.append("api_key", sig.api_key)
-      form.append("timestamp", String(sig.timestamp))
-      form.append("signature", sig.signature)
-      form.append("folder", sig.folder)
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${sig.cloud_name}/image/upload`,
-        { method: "POST", body: form }
+      onChange(url)
+    } catch (err) {
+      setUploadError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo subir la foto. Comprueba Cloudinary en producción."
       )
-      if (!res.ok) throw new Error("Error al subir imagen")
-      const data = await res.json()
-      onChange(data.secure_url)
-    } catch {
-      const reader = new FileReader()
-      reader.onload = () => {
-        if (typeof reader.result === "string") onChange(reader.result)
-      }
-      reader.readAsDataURL(file)
     } finally {
       setUploading(false)
     }
@@ -63,16 +92,17 @@ export function StorePhotoUpload({ value, onChange, disabled }: StorePhotoUpload
     <div className="space-y-2">
       <Label>Foto de la tienda (opcional)</Label>
       <p className="text-xs text-gray-500">
-        Logo o imagen que represente tu tienda. Si no subes ninguna, se muestra la inicial del
-        nombre.
+        Logo o imagen de tu tienda. Si no subes ninguna, se muestra la inicial del nombre.
       </p>
-      {value ? (
+      {uploadError && <p className="text-sm text-red-600">{uploadError}</p>}
+      {value && isHttpUrl(value) ? (
         <div className="flex items-center gap-3">
           <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-gray-100">
             <img
               src={bookListCoverUrl(value)}
               alt="Foto de tu tienda"
               className="h-full w-full object-cover"
+              loading="lazy"
             />
           </div>
           <div className="flex flex-col gap-2">

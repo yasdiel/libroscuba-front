@@ -14,12 +14,13 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/context/AuthContext"
 import { api, ApiError, cacheKeys, type Book } from "@/lib/api"
+import { authToken } from "@/lib/authToken"
 import { useCachedQuery } from "@/lib/useCachedQuery"
 
 const MY_BOOKS_TTL_MS = 60_000
 
 export function ProfilePage() {
-  const { user, logout, refreshUser } = useAuth()
+  const { user, loading: authLoading, logout, refreshUser } = useAuth()
   const navigate = useNavigate()
   const [bookSearch, setBookSearch] = useState("")
   const [editing, setEditing] = useState<Book | null>(null)
@@ -42,6 +43,10 @@ export function ProfilePage() {
     const normalized = url.trim()
     const current = user?.foto_tienda_url ?? ""
     if (normalized === current) return
+    if (normalized && !/^https?:\/\//i.test(normalized)) {
+      setPhotoError("La foto debe subirse a Cloudinary (URL https).")
+      return
+    }
     setSavingPhoto(true)
     setPhotoError(null)
     try {
@@ -102,6 +107,10 @@ export function ProfilePage() {
     } finally {
       setSavingShipping(false)
     }
+  }
+
+  if (authLoading && authToken.has()) {
+    return <p className="px-4 py-8 text-center text-gray-500">Cargando sesión...</p>
   }
 
   if (user?.is_admin) {

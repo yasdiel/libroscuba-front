@@ -45,7 +45,7 @@ export function BookSheet({ book, open, onOpenChange }: BookSheetProps) {
         </SheetHeader>
         <SheetBody className="space-y-4 pb-8">
           <div className="aspect-[4/3] overflow-hidden rounded-2xl">
-            <BookCover src={book.foto_url} alt={book.titulo} eager />
+            <BookCover src={book.foto_url} alt={book.titulo} priority />
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge>{book.estado === "nuevo" ? "Nuevo" : "Usado"}</Badge>
