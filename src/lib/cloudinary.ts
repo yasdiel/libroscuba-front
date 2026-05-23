@@ -3,6 +3,9 @@ import { env } from "@/lib/env"
 
 const MAX_BYTES = 8 * 1024 * 1024
 
+/** Mensaje unificado mientras se sube una imagen (UI). */
+export const UPLOADING_IMAGE_MESSAGE = "Subiendo la imagen, espere unos segundos"
+
 export function isRemoteImageUrl(url: string): boolean {
   return /^https:\/\/.+/i.test(url.trim())
 }
@@ -10,7 +13,7 @@ export function isRemoteImageUrl(url: string): boolean {
 async function uploadWithUnsignedPreset(file: File, folder: string): Promise<string> {
   const { cloudinaryCloudName, cloudinaryUploadPreset } = env
   if (!cloudinaryCloudName || !cloudinaryUploadPreset) {
-    throw new Error("Cloudinary no está configurado en el frontend (preset unsigned).")
+    throw new Error("No se puede subir la imagen en este momento. Intenta más tarde.")
   }
   const form = new FormData()
   form.append("file", file)
@@ -24,11 +27,11 @@ async function uploadWithUnsignedPreset(file: File, folder: string): Promise<str
     const body = (await res.json().catch(() => null)) as {
       error?: { message?: string }
     } | null
-    throw new Error(body?.error?.message ?? "Cloudinary rechazó la imagen")
+    throw new Error(body?.error?.message ?? "No se pudo subir la imagen. Intenta con otra foto.")
   }
   const data = (await res.json()) as { secure_url?: string }
   if (!data.secure_url || !isRemoteImageUrl(data.secure_url)) {
-    throw new Error("Cloudinary no devolvió una URL válida")
+    throw new Error("No se pudo completar la subida. Intenta de nuevo.")
   }
   return data.secure_url
 }
@@ -53,13 +56,13 @@ async function uploadWithBackendSignature(file: File, folder: string): Promise<s
   }
   const data = (await res.json()) as { secure_url?: string }
   if (!data.secure_url || !isRemoteImageUrl(data.secure_url)) {
-    throw new Error("Cloudinary no devolvió una URL válida")
+    throw new Error("No se pudo completar la subida. Intenta de nuevo.")
   }
   return data.secure_url
 }
 
 /**
- * Sube un archivo a Cloudinary y devuelve secure_url.
+ * Sube un archivo al almacén de imágenes y devuelve la URL pública.
  * El guardado en MongoDB ocurre después, en el flujo que llame a esta función.
  */
 export async function uploadImageToCloudinary(

@@ -12,7 +12,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { CloudinaryImageField } from "@/components/media/CloudinaryImageField"
 import { LocationFilter } from "@/components/filters/LocationFilter"
-import { isRemoteImageUrl } from "@/lib/cloudinary"
+import { isRemoteImageUrl, UPLOADING_IMAGE_MESSAGE } from "@/lib/cloudinary"
 import type { Book, EstadoLibro } from "@/lib/api"
 
 export interface BookFormData {
@@ -70,7 +70,7 @@ export function BookForm({
     e.preventDefault()
     setError("")
     if (!photoReady) {
-      setError("Sube la foto del libro a Cloudinary antes de guardar")
+      setError("Sube la foto del libro antes de guardar")
       return
     }
     const price = parseFloat(precio)
@@ -101,7 +101,7 @@ export function BookForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <CloudinaryImageField
         label="Foto del libro"
-        hint="La imagen se sube a Cloudinary primero. Cuando esté lista, podrás publicar el libro."
+        hint="Sube la foto del libro. Cuando termine de cargar, podrás publicar."
         value={fotoUrl}
         folder="libroscuba"
         required
@@ -174,7 +174,7 @@ export function BookForm({
           {saving
             ? "Guardando..."
             : uploadingPhoto
-              ? "Subiendo foto..."
+              ? UPLOADING_IMAGE_MESSAGE
               : !photoReady
                 ? "Falta la foto"
                 : submitLabel}

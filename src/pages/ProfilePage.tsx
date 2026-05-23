@@ -7,7 +7,7 @@ import { BookForm, type BookFormData } from "@/components/books/BookForm"
 import { MunicipiosEnvioSelect } from "@/components/filters/MunicipiosEnvioSelect"
 import { StoreAvatar } from "@/components/stores/StoreAvatar"
 import { CloudinaryImageField } from "@/components/media/CloudinaryImageField"
-import { isRemoteImageUrl } from "@/lib/cloudinary"
+import { isRemoteImageUrl, UPLOADING_IMAGE_MESSAGE } from "@/lib/cloudinary"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -46,7 +46,7 @@ export function ProfilePage() {
     const current = user?.foto_tienda_url ?? ""
     if (normalized === current) return
     if (normalized && !isRemoteImageUrl(normalized)) {
-      setPhotoError("Espera a que Cloudinary termine de subir la imagen.")
+      setPhotoError("Espera a que termine de subir la imagen.")
       return
     }
     setSavingPhoto(true)
@@ -192,7 +192,7 @@ export function ProfilePage() {
         <CardContent className="space-y-3 p-4">
           <CloudinaryImageField
             label="Foto de la tienda"
-            hint="Primero se sube a Cloudinary; cuando tengas la URL, se guarda en tu perfil."
+            hint="La foto se guardará en tu perfil cuando termine de subir."
             value={fotoTiendaUrl}
             folder="libroscuba/tiendas"
             aspectClass="aspect-square max-w-[200px]"
@@ -202,7 +202,7 @@ export function ProfilePage() {
           />
           {(uploadingPhoto || savingPhoto) && (
             <p className="text-xs text-gray-500">
-              {uploadingPhoto ? "Subiendo a Cloudinary..." : "Guardando en tu perfil..."}
+              {uploadingPhoto ? UPLOADING_IMAGE_MESSAGE : "Guardando en tu perfil..."}
             </p>
           )}
           {photoError && <p className="text-sm text-red-600">{photoError}</p>}

@@ -2,7 +2,11 @@ import { useRef, useState } from "react"
 import { ImagePlus, Loader2, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { uploadImageToCloudinary, isRemoteImageUrl } from "@/lib/cloudinary"
+import {
+  uploadImageToCloudinary,
+  isRemoteImageUrl,
+  UPLOADING_IMAGE_MESSAGE,
+} from "@/lib/cloudinary"
 import { bookListCoverUrl } from "@/lib/utils"
 
 interface CloudinaryImageFieldProps {
@@ -69,6 +73,12 @@ export function CloudinaryImageField({
               alt=""
               className="h-full w-full object-cover"
             />
+            {uploading && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/50 px-3 text-center text-sm font-medium text-white">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                {UPLOADING_IMAGE_MESSAGE}
+              </div>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -105,7 +115,7 @@ export function CloudinaryImageField({
           {uploading ? (
             <>
               <Loader2 className="h-8 w-8 animate-spin text-brand" />
-              <span className="text-sm">Subiendo a Cloudinary...</span>
+              <span className="text-sm text-center px-3">{UPLOADING_IMAGE_MESSAGE}</span>
             </>
           ) : (
             <>

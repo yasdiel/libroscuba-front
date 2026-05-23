@@ -1,5 +1,6 @@
 import { BookCover } from "@/components/books/BookCover"
-import { ChevronRight, MapPin, ShoppingBag, Store as StoreIcon, Truck } from "lucide-react"
+import { StoreAvatar } from "@/components/stores/StoreAvatar"
+import { ChevronRight, MapPin, ShoppingBag, Truck } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -77,9 +78,11 @@ export function BookSheet({ book, open, onOpenChange }: BookSheetProps) {
               onClick={goToStore}
               className="flex w-full items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-3 text-left transition-colors hover:bg-gray-100 active:bg-gray-200"
             >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-light">
-                <StoreIcon className="h-5 w-5 text-brand" />
-              </div>
+              <StoreAvatar
+                nombreTienda={book.vendedor_nombre}
+                fotoUrl={book.vendedor_foto_tienda_url}
+                size="sm"
+              />
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-medium uppercase tracking-wide text-brand">
                   Publicado por

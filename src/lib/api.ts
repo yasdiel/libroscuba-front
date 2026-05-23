@@ -77,6 +77,7 @@ export interface Book {
   fecha_creacion: string
   vendedor_nombre?: string | null
   vendedor_whatsapp?: string | null
+  vendedor_foto_tienda_url?: string | null
   vendedor_municipios_envio?: string[]
   owner_whatsapp?: string | null
 }

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { CATALOG_PAGE_SIZE } from "@/lib/catalog"
 import { logBooksJsonReady } from "@/lib/debugBooks"
 import { api, cacheKeys, type Book } from "@/lib/api"
+import { locationPrefs } from "@/lib/locationPrefs"
 import { useCachedQuery } from "@/lib/useCachedQuery"
 
 const PAGE_SIZE = CATALOG_PAGE_SIZE
@@ -16,8 +17,8 @@ const PAGE_SIZE = CATALOG_PAGE_SIZE
 const BOOKS_TTL_MS = 60_000
 
 export function HomePage() {
-  const [provincia, setProvincia] = useState("")
-  const [municipio, setMunicipio] = useState("")
+  const [provincia, setProvincia] = useState(() => locationPrefs.get().provincia)
+  const [municipio, setMunicipio] = useState(() => locationPrefs.get().municipio)
   const [searchInput, setSearchInput] = useState("")
   const [search, setSearch] = useState("")
   const [extraBooks, setExtraBooks] = useState<Book[]>([])
@@ -27,6 +28,10 @@ export function HomePage() {
   const [sheetOpen, setSheetOpen] = useState(false)
 
   const sentinelRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    locationPrefs.set(provincia, municipio)
+  }, [provincia, municipio])
 
   // Debounce del campo de búsqueda → search efectivo.
   useEffect(() => {
