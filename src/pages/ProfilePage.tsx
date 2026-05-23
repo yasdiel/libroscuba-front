@@ -6,7 +6,8 @@ import { BookCardSkeletonGrid } from "@/components/books/BookCardSkeleton"
 import { BookForm, type BookFormData } from "@/components/books/BookForm"
 import { MunicipiosEnvioSelect } from "@/components/filters/MunicipiosEnvioSelect"
 import { StoreAvatar } from "@/components/stores/StoreAvatar"
-import { StorePhotoUpload } from "@/components/stores/StorePhotoUpload"
+import { CloudinaryImageField } from "@/components/media/CloudinaryImageField"
+import { isRemoteImageUrl } from "@/lib/cloudinary"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -32,6 +33,7 @@ export function ProfilePage() {
   const [deleting, setDeleting] = useState(false)
   const [confirmLogout, setConfirmLogout] = useState(false)
   const [fotoTiendaUrl, setFotoTiendaUrl] = useState("")
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [savingPhoto, setSavingPhoto] = useState(false)
   const [photoError, setPhotoError] = useState<string | null>(null)
 
@@ -43,8 +45,8 @@ export function ProfilePage() {
     const normalized = url.trim()
     const current = user?.foto_tienda_url ?? ""
     if (normalized === current) return
-    if (normalized && !/^https?:\/\//i.test(normalized)) {
-      setPhotoError("La foto debe subirse a Cloudinary (URL https).")
+    if (normalized && !isRemoteImageUrl(normalized)) {
+      setPhotoError("Espera a que Cloudinary termine de subir la imagen.")
       return
     }
     setSavingPhoto(true)
@@ -66,7 +68,9 @@ export function ProfilePage() {
 
   const handleStorePhotoChange = (url: string) => {
     setFotoTiendaUrl(url)
-    void saveStorePhoto(url)
+    if (!url || isRemoteImageUrl(url)) {
+      void saveStorePhoto(url)
+    }
   }
 
   const {
@@ -186,13 +190,20 @@ export function ProfilePage() {
 
       <Card>
         <CardContent className="space-y-3 p-4">
-          <StorePhotoUpload
+          <CloudinaryImageField
+            label="Foto de la tienda"
+            hint="Primero se sube a Cloudinary; cuando tengas la URL, se guarda en tu perfil."
             value={fotoTiendaUrl}
-            onChange={handleStorePhotoChange}
+            folder="libroscuba/tiendas"
+            aspectClass="aspect-square max-w-[200px]"
             disabled={savingPhoto}
+            onChange={handleStorePhotoChange}
+            onUploadingChange={setUploadingPhoto}
           />
-          {savingPhoto && (
-            <p className="text-xs text-gray-500">Guardando foto...</p>
+          {(uploadingPhoto || savingPhoto) && (
+            <p className="text-xs text-gray-500">
+              {uploadingPhoto ? "Subiendo a Cloudinary..." : "Guardando en tu perfil..."}
+            </p>
           )}
           {photoError && <p className="text-sm text-red-600">{photoError}</p>}
         </CardContent>

@@ -10,8 +10,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { ImageUpload } from "@/components/books/ImageUpload"
+import { CloudinaryImageField } from "@/components/media/CloudinaryImageField"
 import { LocationFilter } from "@/components/filters/LocationFilter"
+import { isRemoteImageUrl } from "@/lib/cloudinary"
 import type { Book, EstadoLibro } from "@/lib/api"
 
 export interface BookFormData {
@@ -38,7 +39,7 @@ export function BookForm({
   defaultLocation,
   onSubmit,
   onCancel,
-  submitLabel = "Guardar libro",
+  submitLabel = "Publicar libro",
 }: BookFormProps) {
   const [titulo, setTitulo] = useState(initial?.titulo ?? "")
   const [autor, setAutor] = useState(initial?.autor ?? "")
@@ -52,7 +53,8 @@ export function BookForm({
   const [municipio, setMunicipio] = useState(
     initial?.municipio ?? defaultLocation?.municipio ?? ""
   )
-  const [loading, setLoading] = useState(false)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
 
   useEffect(() => {
@@ -62,11 +64,13 @@ export function BookForm({
     }
   }, [defaultLocation, initial])
 
+  const photoReady = isRemoteImageUrl(fotoUrl)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    if (!fotoUrl) {
-      setError("La foto es obligatoria")
+    if (!photoReady) {
+      setError("Sube la foto del libro a Cloudinary antes de guardar")
       return
     }
     const price = parseFloat(precio)
@@ -74,7 +78,7 @@ export function BookForm({
       setError("Completa todos los campos obligatorios")
       return
     }
-    setLoading(true)
+    setSaving(true)
     try {
       await onSubmit({
         titulo,
@@ -89,13 +93,23 @@ export function BookForm({
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al guardar")
     } finally {
-      setLoading(false)
+      setSaving(false)
     }
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <ImageUpload value={fotoUrl} onChange={setFotoUrl} />
+      <CloudinaryImageField
+        label="Foto del libro"
+        hint="La imagen se sube a Cloudinary primero. Cuando esté lista, podrás publicar el libro."
+        value={fotoUrl}
+        folder="libroscuba"
+        required
+        aspectClass="aspect-[4/5]"
+        onChange={setFotoUrl}
+        onUploadingChange={setUploadingPhoto}
+      />
+
       <div className="space-y-1.5">
         <Label htmlFor="titulo">Título *</Label>
         <Input id="titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} required />
@@ -152,13 +166,20 @@ export function BookForm({
             Cancelar
           </Button>
         )}
-        <Button type="submit" className="flex-1" disabled={loading}>
-          {loading ? "Guardando..." : submitLabel}
+        <Button
+          type="submit"
+          className="flex-1"
+          disabled={saving || uploadingPhoto || !photoReady}
+        >
+          {saving
+            ? "Guardando..."
+            : uploadingPhoto
+              ? "Subiendo foto..."
+              : !photoReady
+                ? "Falta la foto"
+                : submitLabel}
         </Button>
       </div>
     </form>
   )
 }
-
-
-
