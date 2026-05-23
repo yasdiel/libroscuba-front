@@ -80,10 +80,10 @@ export function StorePage() {
 
   return (
     <div className="pb-6">
-      <header className="bg-gradient-to-br from-brand to-brand-dark px-4 pb-6 pt-4 text-white rounded-b-3xl">
+      <header className="vintage-header rounded-b-3xl px-4 pb-6 pt-4">
         <Link
           to="/"
-          className="mb-3 inline-flex items-center gap-1 text-sm font-medium text-white/85 hover:text-white"
+          className="mb-3 inline-flex items-center gap-1 text-sm font-medium text-paper/85 hover:text-paper"
         >
           <ArrowLeft className="h-4 w-4" />
           Volver
@@ -96,9 +96,9 @@ export function StorePage() {
             onDark
           />
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-white/80">Tienda</p>
-            <h1 className="text-xl font-bold leading-tight">{store.nombre_tienda}</h1>
-            <p className="mt-1 flex items-center gap-1 text-sm text-white/85">
+            <p className="text-xs font-medium uppercase tracking-wide text-paper/80">Tienda</p>
+            <h1 className="font-display text-xl font-bold leading-tight">{store.nombre_tienda}</h1>
+            <p className="mt-1 flex items-center gap-1 text-sm text-paper/85">
               <MapPin className="h-4 w-4 shrink-0" />
               <span className="truncate">
                 {store.municipio}, {store.provincia}
@@ -107,7 +107,7 @@ export function StorePage() {
           </div>
         </div>
 
-        <Card className="mt-4 border-0 bg-white/95 shadow-lg">
+        <Card className="mt-4 border-0 bg-paper/95 shadow-lg">
           <CardContent className="space-y-3 p-4">
             <div className="grid grid-cols-2 gap-3">
               <div>

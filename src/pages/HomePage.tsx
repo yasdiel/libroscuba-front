@@ -6,6 +6,7 @@ import { BookSheet } from "@/components/books/BookSheet"
 import { LocationFilter } from "@/components/filters/LocationFilter"
 import { Input } from "@/components/ui/input"
 import { CATALOG_PAGE_SIZE } from "@/lib/catalog"
+import { logBooksJsonReady } from "@/lib/debugBooks"
 import { api, cacheKeys, type Book } from "@/lib/api"
 import { useCachedQuery } from "@/lib/useCachedQuery"
 
@@ -55,6 +56,14 @@ export function HomePage() {
     fetcher: () => api.books(filterParams),
     ttlMs: BOOKS_TTL_MS,
   })
+
+  useEffect(() => {
+    if (firstPage) {
+      logBooksJsonReady("HomePage (datos en pantalla)", firstPage, {
+        params: filterParams,
+      })
+    }
+  }, [firstPage, filterParams])
 
   // Al cambiar filtros se reinicia el infinite scroll local.
   useEffect(() => {
@@ -123,18 +132,18 @@ export function HomePage() {
 
   return (
     <div className="pb-4">
-      <header className="bg-gradient-to-br from-brand to-brand-dark px-4 pb-6 pt-6 text-white rounded-b-3xl">
-        <div className="flex items-center gap-2 mb-1">
-          <BookOpen className="h-7 w-7" />
-          <h1 className="text-2xl font-bold">LibrosCuba</h1>
+      <header className="vintage-header rounded-b-3xl px-4 pb-6 pt-6">
+        <div className="mb-1 flex items-center gap-2">
+          <BookOpen className="h-7 w-7 text-paper/90" />
+          <h1 className="font-display text-2xl font-bold tracking-tight">LibrosCuba</h1>
         </div>
-        <p className="text-sm text-white/85 mb-4">
+        <p className="mb-4 text-sm text-paper/85">
           Libros físicos en toda Cuba. Compra directo por WhatsApp.
         </p>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
           <Input
-            className="border-0 bg-white pl-10 text-gray-900 shadow-lg"
+            className="border-0 bg-paper pl-10 text-gray-900 shadow-md"
             placeholder="Buscar por título o autor..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
@@ -143,7 +152,7 @@ export function HomePage() {
       </header>
 
       <section className="px-4 py-4 space-y-3">
-        <h2 className="text-sm font-semibold text-gray-700">Filtrar por ubicación</h2>
+        <h2 className="font-display text-sm font-semibold text-gray-700">Filtrar por ubicación</h2>
         <LocationFilter
           provincia={provincia}
           municipio={municipio}
@@ -154,7 +163,7 @@ export function HomePage() {
 
       <section className="px-4">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">
+          <h2 className="font-display text-lg font-bold text-gray-900">
             {search.trim() ? "Resultados" : "Recién llegados"}
           </h2>
           {showStaleIndicator && (

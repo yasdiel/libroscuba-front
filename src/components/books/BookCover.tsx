@@ -11,7 +11,7 @@ interface BookCoverProps {
 /** Portada pasiva: la tarjeta muestra título/precio al instante; la imagen llega después. */
 export function BookCover({ src, alt, className, priority = false }: BookCoverProps) {
   return (
-    <div className={cn("relative h-full w-full bg-gray-200", className)}>
+    <div className={cn("relative h-full w-full bg-paper-dark", className)}>
       <img
         src={src}
         alt={alt}

@@ -171,7 +171,7 @@ export function ProfilePage() {
           />
           <div className="min-w-0">
             <p className="text-xs font-medium uppercase tracking-wide text-brand">Mi tienda</p>
-            <h1 className="text-2xl font-bold truncate">{user.nombre_tienda}</h1>
+            <h1 className="font-display truncate text-2xl font-bold">{user.nombre_tienda}</h1>
           </div>
         </div>
         <Button

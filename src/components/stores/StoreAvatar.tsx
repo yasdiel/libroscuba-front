@@ -52,8 +52,8 @@ export function StoreAvatar({
         "flex shrink-0 items-center justify-center font-bold",
         sizeClasses[size],
         onDark
-          ? "bg-white/15 text-white backdrop-blur"
-          : "bg-brand-light text-brand",
+          ? "bg-paper/15 text-paper backdrop-blur"
+          : "bg-brand-light text-brand border border-brand/10",
         className
       )}
       aria-hidden

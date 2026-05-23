@@ -131,7 +131,7 @@ export function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-gradient-to-br from-brand to-brand-dark px-4 pb-6 pt-4 text-white">
+      <header className="vintage-header px-4 pb-6 pt-4">
         <div className="mx-auto max-w-lg md:max-w-4xl">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -201,7 +201,7 @@ export function AdminPage() {
               }}
               className={cn(
                 "flex-1 rounded-lg py-3 text-sm font-semibold min-h-12 transition-colors",
-                tab === t ? "bg-brand text-white shadow-sm" : "text-gray-600"
+                tab === t ? "bg-brand text-paper shadow-sm" : "text-gray-600"
               )}
             >
               {t === "books" ? "Libros" : "Tiendas"}

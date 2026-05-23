@@ -119,19 +119,19 @@ export function LoginPage() {
   return (
     <div className="min-h-screen px-4 py-8 max-w-md mx-auto">
       <div className="mb-8 text-center">
-        <BookOpen className="mx-auto h-10 w-10 text-brand mb-2" />
-        <h1 className="text-2xl font-bold">LibrosCuba</h1>
+        <BookOpen className="mx-auto mb-2 h-10 w-10 text-brand" />
+        <h1 className="font-display text-2xl font-bold text-gray-900">LibrosCuba</h1>
         <p className="text-sm text-gray-500 mt-1">
           {mode === "login" ? "Accede a tu tienda" : "Crea tu tienda de libros físicos"}
         </p>
       </div>
 
       <form onSubmit={submit} className="space-y-4">
-        <div className="flex rounded-xl bg-gray-100 p-1">
+        <div className="flex rounded-lg border border-gray-200 bg-paper-dark p-1">
           <button
             type="button"
             className={`flex-1 rounded-lg py-3 text-sm font-medium min-h-12 ${
-              mode === "login" ? "bg-white shadow text-brand" : "text-gray-600"
+              mode === "login" ? "bg-paper text-brand shadow-sm" : "text-gray-600"
             }`}
             onClick={() => switchMode("login")}
           >
@@ -140,7 +140,7 @@ export function LoginPage() {
           <button
             type="button"
             className={`flex-1 rounded-lg py-3 text-sm font-medium min-h-12 ${
-              mode === "register" ? "bg-white shadow text-brand" : "text-gray-600"
+              mode === "register" ? "bg-paper text-brand shadow-sm" : "text-gray-600"
             }`}
             onClick={() => switchMode("register")}
           >

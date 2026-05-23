@@ -1,5 +1,6 @@
 import { authToken } from "@/lib/authToken"
 import { cacheInvalidate, cacheInvalidatePrefix } from "@/lib/cache"
+import { logBooksJsonReady } from "@/lib/debugBooks"
 import { env } from "@/lib/env"
 
 const API_URL = env.apiUrl
@@ -240,7 +241,7 @@ export const api = {
       body: JSON.stringify(data),
     }),
   me: () => request<User>("/api/auth/me", {}, true),
-  books: (params?: {
+  books: async (params?: {
     provincia?: string
     municipio?: string
     q?: string
@@ -254,7 +255,13 @@ export const api = {
     if (params?.skip) sp.set("skip", String(params.skip))
     if (params?.limit) sp.set("limit", String(params.limit))
     const qs = sp.toString()
-    return request<Book[]>(`/api/books${qs ? `?${qs}` : ""}`)
+    const t0 = performance.now()
+    const data = await request<Book[]>(`/api/books${qs ? `?${qs}` : ""}`)
+    logBooksJsonReady("GET /api/books", data, {
+      params,
+      ms: Math.round(performance.now() - t0),
+    })
+    return data
   },
   book: (id: string) => request<Book>(`/api/books/${id}`),
   createBook: async (data: Omit<Book, "id" | "owner_id" | "fecha_creacion">) => {

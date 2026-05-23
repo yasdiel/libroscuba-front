@@ -20,7 +20,7 @@ export function BookCard({ book, onClick, actions, className }: BookCardProps) {
 
   return (
     <Card
-      className={cn("overflow-hidden transition-shadow active:shadow-md", className)}
+      className={cn("overflow-hidden transition-shadow active:shadow-md active:ring-1 active:ring-brand/20", className)}
       onClick={onClick}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
@@ -38,7 +38,7 @@ export function BookCard({ book, onClick, actions, className }: BookCardProps) {
       <div className="p-3 space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <h3 className="truncate font-semibold text-gray-900">{book.titulo}</h3>
+            <h3 className="truncate font-display text-base font-semibold text-gray-900">{book.titulo}</h3>
             <p className="truncate text-sm text-gray-500">{book.autor}</p>
           </div>
           <Badge variant={book.estado === "nuevo" ? "default" : "secondary"}>
