@@ -14,6 +14,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import type { Book } from "@/lib/api"
+import { storePath } from "@/lib/storeRoutes"
 import { formatPrice, whatsappBuyLink } from "@/lib/utils"
 
 interface BookSheetProps {
@@ -30,8 +31,10 @@ export function BookSheet({ book, open, onOpenChange }: BookSheetProps) {
     : null
 
   const goToStore = () => {
+    const slug = book.vendedor_tienda_slug
+    if (!slug) return
     onOpenChange(false)
-    navigate(`/tienda/${book.owner_id}`)
+    navigate(storePath(slug))
   }
 
   return (
@@ -72,7 +75,7 @@ export function BookSheet({ book, open, onOpenChange }: BookSheetProps) {
             </div>
           )}
 
-          {book.vendedor_nombre && (
+          {book.vendedor_nombre && book.vendedor_tienda_slug && (
             <button
               type="button"
               onClick={goToStore}

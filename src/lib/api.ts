@@ -26,9 +26,9 @@ export const cacheKeys = {
   },
   book: (id: string) => `GET /api/books/${id}`,
   myBooks: () => "GET /api/users/me/books",
-  store: (id: string) => `GET /api/users/stores/${id}`,
-  storeBooks: (id: string, q?: string) =>
-    `GET /api/users/stores/${id}/books${q ? `?q=${q}` : ""}`,
+  store: (slug: string) => `GET /api/users/stores/${slug}`,
+  storeBooks: (slug: string, q?: string) =>
+    `GET /api/users/stores/${slug}/books${q ? `?q=${q}` : ""}`,
   adminStats: () => "GET /api/admin/stats",
   adminBooks: (q?: string) => `GET /api/admin/books${q ? `?q=${q}` : ""}`,
   adminStores: (q?: string) => `GET /api/admin/stores${q ? `?q=${q}` : ""}`,
@@ -58,6 +58,7 @@ export interface User {
   provincia: string
   municipio: string
   nombre_tienda: string
+  tienda_slug: string
   municipios_envio: string[]
   is_admin: boolean
   foto_tienda_url?: string | null
@@ -78,6 +79,7 @@ export interface Book {
   vendedor_nombre?: string | null
   vendedor_whatsapp?: string | null
   vendedor_foto_tienda_url?: string | null
+  vendedor_tienda_slug?: string | null
   vendedor_municipios_envio?: string[]
   owner_whatsapp?: string | null
 }
@@ -85,6 +87,7 @@ export interface Book {
 export interface Store {
   id: string
   nombre_tienda: string
+  tienda_slug: string
   provincia: string
   municipio: string
   whatsapp_number: string
@@ -283,10 +286,10 @@ export const api = {
     cacheInvalidate(cacheKeys.book(id))
   },
   myBooks: () => request<Book[]>("/api/users/me/books", {}, true),
-  store: (id: string) => request<Store>(`/api/users/stores/${id}`),
-  storeBooks: (id: string, q?: string) =>
+  store: (slug: string) => request<Store>(`/api/users/stores/${encodeURIComponent(slug)}`),
+  storeBooks: (slug: string, q?: string) =>
     request<Book[]>(
-      `/api/users/stores/${id}/books${q ? `?q=${encodeURIComponent(q)}` : ""}`
+      `/api/users/stores/${encodeURIComponent(slug)}/books${q ? `?q=${encodeURIComponent(q)}` : ""}`
     ),
   updateProfile: async (
     data: Partial<User> & { foto_tienda_url?: string | null }

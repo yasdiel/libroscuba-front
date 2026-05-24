@@ -17,7 +17,7 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route index element={<HomePage />} />
             <Route path="publicar" element={<PublishPage />} />
-            <Route path="tienda/:id" element={<StorePage />} />
+            <Route path="tienda/:slug" element={<StorePage />} />
             <Route path="terminos" element={<TermsPage />} />
             <Route path="perfil" element={<ProfilePage />} />
           </Route>

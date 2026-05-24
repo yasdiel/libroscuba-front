@@ -174,7 +174,12 @@ export function LoginPage() {
                 value={nombreTienda}
                 onChange={(e) => setNombreTienda(e.target.value)}
                 required
+                minLength={2}
+                maxLength={80}
               />
+              <p className="text-xs text-gray-500">
+                Debe ser único: será el enlace público de tu tienda (ej. libreria-centro).
+              </p>
             </div>
             <LocationFilter
               required

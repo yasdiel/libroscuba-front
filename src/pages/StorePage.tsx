@@ -16,7 +16,7 @@ const STORE_TTL_MS = 60_000
 const STORE_BOOKS_TTL_MS = 60_000
 
 export function StorePage() {
-  const { id } = useParams<{ id: string }>()
+  const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
   const [searchInput, setSearchInput] = useState("")
   const [search, setSearch] = useState("")
@@ -33,20 +33,20 @@ export function StorePage() {
     loading: loadingStore,
     error: storeError,
   } = useCachedQuery<Store>({
-    key: id ? cacheKeys.store(id) : null,
-    fetcher: () => api.store(id as string),
+    key: slug ? cacheKeys.store(slug) : null,
+    fetcher: () => api.store(slug as string),
     ttlMs: STORE_TTL_MS,
-    enabled: !!id,
+    enabled: !!slug,
   })
 
   const {
     data: booksData,
     loading: loadingBooks,
   } = useCachedQuery<Book[]>({
-    key: id ? cacheKeys.storeBooks(id, search || undefined) : null,
-    fetcher: () => api.storeBooks(id as string, search || undefined),
+    key: slug ? cacheKeys.storeBooks(slug, search || undefined) : null,
+    fetcher: () => api.storeBooks(slug as string, search || undefined),
     ttlMs: STORE_BOOKS_TTL_MS,
-    enabled: !!id,
+    enabled: !!slug,
   })
 
   const books = booksData ?? []
