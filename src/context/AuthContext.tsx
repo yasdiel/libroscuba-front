@@ -16,7 +16,10 @@ interface AuthContextValue {
   /** true mientras se restaura la sesión desde localStorage al abrir la app */
   loading: boolean
   login: (whatsapp_number: string, password: string) => Promise<void>
+  sendRegisterOtp: (email: string) => Promise<void>
   register: (data: {
+    email: string
+    otp: string
     password: string
     whatsapp_number: string
     provincia: string
@@ -102,6 +105,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await refreshUser()
   }
 
+  const sendRegisterOtp = async (email: string) => {
+    await api.sendRegisterOtp(email)
+  }
+
   const register = async (data: Parameters<AuthContextValue["register"]>[0]) => {
     const { access_token } = await api.register(data)
     authToken.set(access_token)
@@ -116,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const value = useMemo(
-    () => ({ user, loading, login, register, logout, refreshUser }),
+    () => ({ user, loading, login, sendRegisterOtp, register, logout, refreshUser }),
     [user, loading, refreshUser]
   )
 

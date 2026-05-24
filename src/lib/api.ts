@@ -54,6 +54,7 @@ export type EstadoLibro = "nuevo" | "usado"
 
 export interface User {
   id: string
+  email: string
   whatsapp_number: string
   provincia: string
   municipio: string
@@ -230,7 +231,14 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ whatsapp_number, password }),
     }),
+  sendRegisterOtp: (email: string) =>
+    request<void>("/api/auth/register/send-otp", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
   register: (data: {
+    email: string
+    otp: string
     password: string
     whatsapp_number: string
     provincia: string
