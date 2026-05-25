@@ -93,7 +93,7 @@ export function LoginPage() {
         })
       }
       const me = await api.me()
-      navigate(me.is_admin ? "/admin" : "/perfil")
+      navigate(me.is_admin ? "/admin" : "/perfil", { replace: true })
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message)
@@ -153,7 +153,7 @@ export function LoginPage() {
           <Label htmlFor="phone">Teléfono / WhatsApp</Label>
           <PhoneInput id="phone" value={phone} onChange={setPhone} />
           <p id="phone-hint" className="text-xs text-gray-500">
-            8 dígitos tras +53. Móvil cubano: prefijo 5X (50–59) o 63.
+            Inserte un número válido.
           </p>
         </div>
 

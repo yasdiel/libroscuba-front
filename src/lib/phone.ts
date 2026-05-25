@@ -14,7 +14,7 @@ export const CUBA_MOBILE_TWO_DIGIT_PREFIXES = new Set([
   "63",
 ])
 
-export const CUBA_MOBILE_PREFIX_HINT = "5X (50–59) o 63"
+export const PHONE_INVALID_MESSAGE = "Inserte un número válido."
 
 export function stripPhoneDigits(value: string): string {
   return value.replace(/\D/g, "").slice(0, PHONE_LOCAL_LENGTH)
@@ -40,13 +40,13 @@ export function validateLocalPhone(digits: string): string | null {
   if (!digits) return "Ingresa tu número de teléfono"
   if (!/^\d+$/.test(digits)) return "Solo se permiten números"
   if (digits.length >= 2 && !isValidCubaMobilePrefix(digits.slice(0, 2))) {
-    return `Prefijo inválido. Usa un móvil cubano (${CUBA_MOBILE_PREFIX_HINT}) después del +53.`
+    return PHONE_INVALID_MESSAGE
   }
   if (digits.length !== PHONE_LOCAL_LENGTH) {
-    return `El número debe tener exactamente ${PHONE_LOCAL_LENGTH} dígitos`
+    return PHONE_INVALID_MESSAGE
   }
   if (!isValidCubaMobilePrefix(digits.slice(0, 2))) {
-    return `Prefijo inválido. Usa un móvil cubano (${CUBA_MOBILE_PREFIX_HINT}) después del +53.`
+    return PHONE_INVALID_MESSAGE
   }
   return null
 }

@@ -74,6 +74,17 @@ export function AdminPage() {
 
   const isAdmin = !!user?.is_admin
 
+  // El admin solo usa este panel: "atrás" del navegador no sale a la app general.
+  useEffect(() => {
+    if (!isAdmin) return
+    const stayOnAdmin = () => {
+      window.history.pushState({ adminPanel: true }, "", "#/admin")
+    }
+    stayOnAdmin()
+    window.addEventListener("popstate", stayOnAdmin)
+    return () => window.removeEventListener("popstate", stayOnAdmin)
+  }, [isAdmin])
+
   const { data: stats, refetch: refetchStats } = useCachedQuery<AdminStats>({
     key: isAdmin ? cacheKeys.adminStats() : null,
     fetcher: () => api.adminStats(),
@@ -177,7 +188,7 @@ export function AdminPage() {
         await Promise.all([refetchBanned(), refetchStats()])
       } else if (pending.kind === "logout") {
         logout()
-        navigate("/")
+        navigate("/login", { replace: true })
       }
       setPending(null)
     } finally {
