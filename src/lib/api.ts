@@ -31,6 +31,8 @@ export const cacheKeys = {
     `GET /api/users/stores/${slug}/books${q ? `?q=${q}` : ""}`,
   adminStats: () => "GET /api/admin/stats",
   adminBooks: (q?: string) => `GET /api/admin/books${q ? `?q=${q}` : ""}`,
+  adminReports: () => "GET /api/admin/reports",
+  adminBanned: () => "GET /api/admin/banned",
   adminStores: (q?: string) => `GET /api/admin/stores${q ? `?q=${q}` : ""}`,
 }
 
@@ -54,7 +56,6 @@ export type EstadoLibro = "nuevo" | "usado"
 
 export interface User {
   id: string
-  email: string
   whatsapp_number: string
   provincia: string
   municipio: string
@@ -100,6 +101,38 @@ export interface Store {
 export interface AdminStats {
   total_libros_activos: number
   total_tiendas: number
+  reportes_pendientes: number
+  cuentas_baneadas: number
+}
+
+export interface ReportedBook {
+  book_id: string
+  report_status: string
+  reason: string
+  details?: string | null
+  reporter_id?: string | null
+  reported_at: string
+  titulo: string
+  autor: string
+  precio: number
+  foto_url: string
+  estado: string
+  provincia: string
+  municipio: string
+  owner_id: string
+  owner_nombre_tienda?: string | null
+  owner_whatsapp?: string | null
+}
+
+export interface BannedUser {
+  id: string
+  nombre_tienda: string
+  whatsapp_number: string
+  provincia: string
+  municipio: string
+  banned_at: string
+  ban_reason?: string | null
+  book_count: number
 }
 
 export interface LocationsResponse {
@@ -146,8 +179,6 @@ const VALIDATION_FIELD_LABELS: Record<string, string> = {
   provincia: "Provincia",
   municipio: "Municipio",
   accepted_terms: "Términos y condiciones",
-  email: "Correo electrónico",
-  otp: "Código de verificación",
 }
 
 function formatApiErrorDetail(detail: unknown): string {
@@ -172,13 +203,13 @@ const REQUEST_TIMEOUT_MS = 15_000
 async function request<T>(
   path: string,
   options: RequestInit = {},
-  auth = false
+  auth: boolean | "optional" = false
 ): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
   }
-  if (auth) {
+  if (auth === true || auth === "optional") {
     const token = getToken()
     if (token) headers.Authorization = `Bearer ${token}`
   }
@@ -232,14 +263,7 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ whatsapp_number, password }),
     }),
-  sendRegisterOtp: (email: string) =>
-    request<void>("/api/auth/register/send-otp", {
-      method: "POST",
-      body: JSON.stringify({ email: email.trim().toLowerCase() }),
-    }),
   register: (data: {
-    email: string
-    otp: string
     password: string
     whatsapp_number: string
     provincia: string
@@ -250,11 +274,7 @@ export const api = {
   }) =>
     request<{ access_token: string }>("/api/auth/register", {
       method: "POST",
-      body: JSON.stringify({
-        ...data,
-        email: data.email.trim().toLowerCase(),
-        otp: data.otp.trim(),
-      }),
+      body: JSON.stringify(data),
     }),
   me: () => request<User>("/api/auth/me", {}, true),
   books: async (params?: {
@@ -330,9 +350,36 @@ export const api = {
       {},
       true
     ),
+  reportBook: (bookId: string, data: { reason: string; details?: string }) =>
+    request<void>(`/api/books/${bookId}/report`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, "optional"),
   adminStats: () => request<AdminStats>("/api/admin/stats", {}, true),
   adminBooks: (q?: string) =>
     request<Book[]>(`/api/admin/books${q ? `?q=${encodeURIComponent(q)}` : ""}`, {}, true),
+  adminReports: () => request<ReportedBook[]>("/api/admin/reports", {}, true),
+  adminResolveReport: async (
+    bookId: string,
+    data: { decision: "valid" | "invalid"; ban_owner: boolean }
+  ) => {
+    await request<void>(
+      `/api/admin/reports/${bookId}/resolve`,
+      { method: "POST", body: JSON.stringify(data) },
+      true
+    )
+    invalidateBooks()
+    cacheInvalidate(cacheKeys.adminReports())
+    cacheInvalidate(cacheKeys.adminStats())
+    cacheInvalidate(cacheKeys.adminBanned())
+  },
+  adminBanned: () => request<BannedUser[]>("/api/admin/banned", {}, true),
+  adminUnban: async (userId: string) => {
+    await request<void>(`/api/admin/banned/${userId}/unban`, { method: "POST" }, true)
+    cacheInvalidate(cacheKeys.adminBanned())
+    cacheInvalidate(cacheKeys.adminStats())
+    invalidateStores()
+  },
   adminStores: (q?: string) =>
     request<Store[]>(`/api/admin/stores${q ? `?q=${encodeURIComponent(q)}` : ""}`, {}, true),
   adminDeleteBook: async (id: string) => {

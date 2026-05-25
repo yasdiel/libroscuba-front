@@ -1,5 +1,5 @@
 import { Input } from "@/components/ui/input"
-import { CUBA_PREFIX, stripPhoneDigits } from "@/lib/phone"
+import { CUBA_PREFIX, isValidCubaMobilePrefix, stripPhoneDigits } from "@/lib/phone"
 import { cn } from "@/lib/utils"
 
 interface PhoneInputProps {
@@ -11,6 +11,8 @@ interface PhoneInputProps {
 }
 
 export function PhoneInput({ id, value, onChange, className, disabled }: PhoneInputProps) {
+  const prefixInvalid = value.length >= 2 && !isValidCubaMobilePrefix(value.slice(0, 2))
+
   return (
     <div className={cn("flex", className)}>
       <span
@@ -26,8 +28,13 @@ export function PhoneInput({ id, value, onChange, className, disabled }: PhoneIn
         autoComplete="tel-national"
         pattern="[0-9]*"
         maxLength={8}
-        placeholder="55512345"
-        className="rounded-l-none rounded-r-xl"
+        placeholder="55123456"
+        className={cn(
+          "rounded-l-none rounded-r-xl",
+          prefixInvalid && "border-red-400 focus-visible:ring-red-400"
+        )}
+        aria-invalid={prefixInvalid || undefined}
+        aria-describedby={id ? `${id}-hint` : undefined}
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(stripPhoneDigits(e.target.value))}

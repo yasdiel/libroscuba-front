@@ -1,5 +1,6 @@
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom"
 import { AppLayout } from "@/components/layout/AppLayout"
+import { SnackbarHost } from "@/components/ui/snackbar-host"
 import { AuthProvider } from "@/context/AuthContext"
 import { AdminPage } from "@/pages/AdminPage"
 import { HomePage } from "@/pages/HomePage"
@@ -12,6 +13,7 @@ import { TermsPage } from "@/pages/TermsPage"
 export default function App() {
   return (
     <AuthProvider>
+      <SnackbarHost />
       <HashRouter>
         <Routes>
           <Route element={<AppLayout />}>

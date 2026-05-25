@@ -15,6 +15,7 @@ export interface ConfirmDialogProps {
   loading?: boolean
   onConfirm: () => void | Promise<void>
   icon?: React.ReactNode
+  children?: React.ReactNode
 }
 
 export function ConfirmDialog({
@@ -28,6 +29,7 @@ export function ConfirmDialog({
   loading = false,
   onConfirm,
   icon,
+  children,
 }: ConfirmDialogProps) {
   const iconWrapClass =
     variant === "destructive"
@@ -68,6 +70,7 @@ export function ConfirmDialog({
               )}
             </div>
           </div>
+          {children}
           <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button
               type="button"

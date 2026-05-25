@@ -1,6 +1,9 @@
+import { useState } from "react"
 import { BookCover } from "@/components/books/BookCover"
+import { ReportBookDialog } from "@/components/books/ReportBookDialog"
 import { StoreAvatar } from "@/components/stores/StoreAvatar"
-import { ChevronRight, MapPin, ShoppingBag, Truck } from "lucide-react"
+import { useAuth } from "@/context/AuthContext"
+import { ChevronRight, Flag, MapPin, ShoppingBag, Truck } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -25,7 +28,10 @@ interface BookSheetProps {
 
 export function BookSheet({ book, open, onOpenChange }: BookSheetProps) {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const [reportOpen, setReportOpen] = useState(false)
   if (!book) return null
+  const canReport = !user || user.id !== book.owner_id
   const wa = book.vendedor_whatsapp
     ? whatsappBuyLink(book.vendedor_whatsapp, book.titulo, book.autor)
     : null
@@ -121,8 +127,26 @@ export function BookSheet({ book, open, onOpenChange }: BookSheetProps) {
               </a>
             </Button>
           )}
+
+          {canReport && (
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full gap-2"
+              onClick={() => setReportOpen(true)}
+            >
+              <Flag className="h-4 w-4" />
+              Reportar publicación
+            </Button>
+          )}
         </SheetBody>
       </SheetContent>
+      <ReportBookDialog
+        bookId={book.id}
+        bookTitle={book.titulo}
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+      />
     </Sheet>
   )
 }
