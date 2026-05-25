@@ -146,7 +146,8 @@ const VALIDATION_FIELD_LABELS: Record<string, string> = {
   provincia: "Provincia",
   municipio: "Municipio",
   accepted_terms: "Términos y condiciones",
-  email: "Email (obsoleto — reinicia el backend)",
+  email: "Correo electrónico",
+  otp: "Código de verificación",
 }
 
 function formatApiErrorDetail(detail: unknown): string {
@@ -234,7 +235,7 @@ export const api = {
   sendRegisterOtp: (email: string) =>
     request<void>("/api/auth/register/send-otp", {
       method: "POST",
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email: email.trim().toLowerCase() }),
     }),
   register: (data: {
     email: string
@@ -249,7 +250,11 @@ export const api = {
   }) =>
     request<{ access_token: string }>("/api/auth/register", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        email: data.email.trim().toLowerCase(),
+        otp: data.otp.trim(),
+      }),
     }),
   me: () => request<User>("/api/auth/me", {}, true),
   books: async (params?: {

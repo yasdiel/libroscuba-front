@@ -52,7 +52,8 @@ export function LoginPage() {
   const [error, setError] = useState("")
   const [errorAction, setErrorAction] = useState<null | {
     label: string
-    targetMode: "login" | "register"
+    targetMode?: "login" | "register"
+    onClick?: () => void
   }>(null)
   const [loading, setLoading] = useState(false)
   const [sendingOtp, setSendingOtp] = useState(false)
@@ -82,7 +83,7 @@ export function LoginPage() {
     }
     setSendingOtp(true)
     try {
-      await sendRegisterOtp(email.trim())
+      await sendRegisterOtp(email)
       setOtpSent(true)
       setOtpCooldown(OTP_RESEND_SECONDS)
     } catch (err) {
@@ -149,8 +150,8 @@ export function LoginPage() {
           return
         }
         await register({
-          email: email.trim(),
-          otp: otp.trim(),
+          email,
+          otp,
           whatsapp_number,
           password,
           nombre_tienda: nombreTienda,
@@ -169,6 +170,11 @@ export function LoginPage() {
           setErrorAction({ label: "Crear cuenta con este número", targetMode: "register" })
         } else if (mode === "register" && err.status === 409) {
           setErrorAction({ label: "Iniciar sesión", targetMode: "login" })
+        } else if (mode === "register" && err.status === 400 && otpSent) {
+          setErrorAction({
+            label: "Reenviar código al correo",
+            onClick: () => void handleSendOtp(),
+          })
         } else {
           setErrorAction(null)
         }
@@ -346,7 +352,13 @@ export function LoginPage() {
             {errorAction && (
               <button
                 type="button"
-                onClick={() => switchMode(errorAction.targetMode)}
+                onClick={() => {
+                  if (errorAction.onClick) {
+                    errorAction.onClick()
+                  } else if (errorAction.targetMode) {
+                    switchMode(errorAction.targetMode)
+                  }
+                }}
                 className="text-sm font-semibold text-brand underline-offset-2 hover:underline"
               >
                 {errorAction.label}
