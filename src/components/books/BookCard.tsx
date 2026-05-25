@@ -1,4 +1,5 @@
 import { MapPin, ShoppingBag } from "lucide-react"
+import { AddToCartButton } from "@/components/cart/AddToCartButton"
 import { BookCover } from "@/components/books/BookCover"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -55,19 +56,17 @@ export function BookCard({ book, onClick, actions, className }: BookCardProps) {
         {actions ? (
           <div className="flex gap-2 pt-1">{actions}</div>
         ) : (
-          buyLink && (
-            <Button asChild size="sm" className="w-full gap-1.5 mt-1">
-              <a
-                href={buyLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ShoppingBag className="h-4 w-4" />
-                Comprar
-              </a>
-            </Button>
-          )
+          <div className="flex flex-col gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
+            <AddToCartButton book={book} />
+            {buyLink && (
+              <Button asChild size="sm" className="w-full gap-1.5">
+                <a href={buyLink} target="_blank" rel="noopener noreferrer">
+                  <ShoppingBag className="h-4 w-4" />
+                  Comprar
+                </a>
+              </Button>
+            )}
+          </div>
         )}
       </div>
     </Card>

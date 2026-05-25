@@ -25,6 +25,7 @@ export const cacheKeys = {
     return `GET /api/books${qs ? `?${qs}` : ""}`
   },
   book: (id: string) => `GET /api/books/${id}`,
+  cartSync: () => "POST /api/books/cart-sync",
   myBooks: () => "GET /api/users/me/books",
   store: (slug: string) => `GET /api/users/stores/${slug}`,
   storeBooks: (slug: string, q?: string) =>
@@ -200,6 +201,31 @@ function getToken(): string | null {
 
 const REQUEST_TIMEOUT_MS = 15_000
 
+export const CONNECTION_ERROR_MESSAGE = "Error de conexión"
+
+export const CONNECTION_ERROR_HINT =
+  "Comprueba tu conexión a internet e inténtalo de nuevo."
+
+const LEGACY_CONNECTION_MESSAGE = /servidor|tardó|mongo|backend|en marcha|API_URL|conectar con el API/i
+
+export function isConnectionError(err: unknown): boolean {
+  if (err instanceof ApiError && err.status === 0) return true
+  if (err instanceof ApiError && LEGACY_CONNECTION_MESSAGE.test(err.message)) return true
+  return false
+}
+
+/** Mensaje apto para mostrar al usuario (sin detalles técnicos). */
+export function userFacingErrorMessage(
+  err: unknown,
+  fallback = "Algo salió mal. Inténtalo de nuevo."
+): string {
+  if (isConnectionError(err)) {
+    return `${CONNECTION_ERROR_MESSAGE}. ${CONNECTION_ERROR_HINT}`
+  }
+  if (err instanceof ApiError) return err.message
+  return fallback
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {},
@@ -224,18 +250,12 @@ async function request<T>(
     })
   } catch (err) {
     if (err instanceof DOMException && err.name === "AbortError") {
-      throw new ApiError(
-        "El servidor tardó demasiado en responder. Comprueba que el backend y MongoDB estén en ejecución.",
-        0
-      )
+      throw new ApiError(CONNECTION_ERROR_MESSAGE, 0)
     }
     if (!API_URL) {
-      throw new ApiError("VITE_API_URL no está configurada en el archivo .env", 0)
+      throw new ApiError(CONNECTION_ERROR_MESSAGE, 0)
     }
-    throw new ApiError(
-      `No se pudo conectar con el API (${API_URL}). ¿Está el backend en marcha?`,
-      0
-    )
+    throw new ApiError(CONNECTION_ERROR_MESSAGE, 0)
   } finally {
     clearTimeout(timeoutId)
   }
@@ -294,6 +314,11 @@ export const api = {
     return request<Book[]>(`/api/books${qs ? `?${qs}` : ""}`)
   },
   book: (id: string) => request<Book>(`/api/books/${id}`),
+  cartSync: (bookIds: string[]) =>
+    request<Book[]>("/api/books/cart-sync", {
+      method: "POST",
+      body: JSON.stringify({ book_ids: bookIds }),
+    }),
   createBook: async (data: Omit<Book, "id" | "owner_id" | "fecha_creacion">) => {
     const res = await request<Book>(
       "/api/books",

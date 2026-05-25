@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { BookOpen, Loader2, Search } from "lucide-react"
 import { BookCard } from "@/components/books/BookCard"
+import { ConnectionErrorCard } from "@/components/ui/connection-error-card"
 import { BookCardSkeletonGrid, bookCardGridClass } from "@/components/books/BookCardSkeleton"
 import { BookSheet } from "@/components/books/BookSheet"
 import { LocationFilter } from "@/components/filters/LocationFilter"
 import { Input } from "@/components/ui/input"
 import { CATALOG_PAGE_SIZE } from "@/lib/catalog"
 import { logBooksJsonReady } from "@/lib/debugBooks"
-import { api, cacheKeys, type Book } from "@/lib/api"
+import { api, cacheKeys, isConnectionError, type Book } from "@/lib/api"
 import { locationPrefs } from "@/lib/locationPrefs"
 import { useCachedQuery } from "@/lib/useCachedQuery"
 
@@ -181,17 +182,25 @@ export function HomePage() {
         {loading ? (
           <BookCardSkeletonGrid count={PAGE_SIZE} />
         ) : error && books.length === 0 ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-6 text-center text-sm text-red-800">
-            <p className="font-medium mb-1">Error al cargar libros</p>
-            <p>{error.message}</p>
-            <button
-              type="button"
-              className="mt-3 text-brand font-semibold underline"
-              onClick={() => refetch()}
-            >
-              Reintentar
-            </button>
-          </div>
+          isConnectionError(error) ? (
+            <ConnectionErrorCard
+              onRetry={() => void refetch()}
+              retrying={isFetching}
+              description="No pudimos cargar el catálogo. Comprueba tu conexión a internet e inténtalo de nuevo."
+            />
+          ) : (
+            <div className="rounded-xl border border-gray-200 bg-white px-4 py-6 text-center text-sm text-gray-600">
+              <p className="font-medium text-gray-900">No se pudo cargar el catálogo</p>
+              <p className="mt-1">{error.message}</p>
+              <button
+                type="button"
+                className="mt-3 font-semibold text-brand underline"
+                onClick={() => void refetch()}
+              >
+                Intentar de nuevo
+              </button>
+            </div>
+          )
         ) : books.length === 0 ? (
           <p className="text-center text-gray-500 py-8">No hay libros con estos filtros.</p>
         ) : (

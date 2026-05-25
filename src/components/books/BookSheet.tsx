@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { AddToCartButton } from "@/components/cart/AddToCartButton"
 import { BookCover } from "@/components/books/BookCover"
 import { ReportBookDialog } from "@/components/books/ReportBookDialog"
 import { StoreAvatar } from "@/components/stores/StoreAvatar"
@@ -118,6 +119,8 @@ export function BookSheet({ book, open, onOpenChange }: BookSheetProps) {
               </div>
             </div>
           )}
+
+          <AddToCartButton book={book} size="default" />
 
           {wa && (
             <Button className="w-full gap-2" size="lg" asChild>

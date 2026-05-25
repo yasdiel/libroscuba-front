@@ -39,3 +39,27 @@ export function whatsappBuyLink(
   )
   return `https://wa.me/${clean}?text=${text}`
 }
+
+export function whatsappCartOrderLink(
+  phone: string,
+  storeName: string,
+  lines: { titulo: string; autor: string; precio: number }[]
+): string | null {
+  if (!phone || lines.length === 0) return null
+  const clean = phone.replace(/\D/g, "")
+  const detail = lines
+    .map(
+      (line, i) =>
+        `${i + 1}. «${line.titulo}» — ${line.autor} — ${line.precio.toFixed(0)} CUP`
+    )
+    .join("\n")
+  const total = lines.reduce((sum, l) => sum + l.precio, 0)
+  const body = [
+    `Hola, quisiera comprar los siguientes libros de ${storeName} que vi en LibrosCuba:`,
+    "",
+    detail,
+    "",
+    `Total: ${total.toFixed(0)} CUP`,
+  ].join("\n")
+  return `https://wa.me/${clean}?text=${encodeURIComponent(body)}`
+}

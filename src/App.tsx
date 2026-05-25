@@ -2,22 +2,26 @@ import { HashRouter, Navigate, Route, Routes } from "react-router-dom"
 import { AppLayout } from "@/components/layout/AppLayout"
 import { SnackbarHost } from "@/components/ui/snackbar-host"
 import { AuthProvider } from "@/context/AuthContext"
+import { CartProvider } from "@/context/CartContext"
 import { AdminPage } from "@/pages/AdminPage"
 import { HomePage } from "@/pages/HomePage"
 import { LoginPage } from "@/pages/LoginPage"
 import { ProfilePage } from "@/pages/ProfilePage"
 import { PublishPage } from "@/pages/PublishPage"
 import { StorePage } from "@/pages/StorePage"
+import { CartPage } from "@/pages/CartPage"
 import { TermsPage } from "@/pages/TermsPage"
 
 export default function App() {
   return (
     <AuthProvider>
-      <SnackbarHost />
-      <HashRouter>
+      <CartProvider>
+        <SnackbarHost />
+        <HashRouter>
         <Routes>
           <Route element={<AppLayout />}>
             <Route index element={<HomePage />} />
+            <Route path="carrito" element={<CartPage />} />
             <Route path="publicar" element={<PublishPage />} />
             <Route path="tienda/:slug" element={<StorePage />} />
             <Route path="terminos" element={<TermsPage />} />
@@ -27,7 +31,8 @@ export default function App() {
           <Route path="admin" element={<AdminPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </HashRouter>
+        </HashRouter>
+      </CartProvider>
     </AuthProvider>
   )
 }

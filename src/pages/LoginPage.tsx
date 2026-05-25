@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label"
 import { PasswordInput } from "@/components/ui/password-input"
 import { PhoneInput } from "@/components/ui/phone-input"
 import { useAuth } from "@/context/AuthContext"
-import { api, ApiError } from "@/lib/api"
+import { api, ApiError, isConnectionError, userFacingErrorMessage } from "@/lib/api"
+import { cn } from "@/lib/utils"
 import {
   formatPhoneForApi,
   PASSWORD_MIN_LENGTH,
@@ -37,6 +38,7 @@ export function LoginPage() {
   const [municipiosEnvio, setMunicipiosEnvio] = useState<string[]>([])
   const [accepted, setAccepted] = useState(false)
   const [error, setError] = useState("")
+  const [connectionError, setConnectionError] = useState(false)
   const [errorAction, setErrorAction] = useState<null | {
     label: string
     targetMode: "login" | "register"
@@ -46,12 +48,14 @@ export function LoginPage() {
   const switchMode = (next: "login" | "register") => {
     setMode(next)
     setError("")
+    setConnectionError(false)
     setErrorAction(null)
   }
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+    setConnectionError(false)
     setErrorAction(null)
 
     const phoneError = validateLocalPhone(phone)
@@ -95,8 +99,10 @@ export function LoginPage() {
       const me = await api.me()
       navigate(me.is_admin ? "/admin" : "/perfil", { replace: true })
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message)
+      const conn = isConnectionError(err)
+      setConnectionError(conn)
+      setError(userFacingErrorMessage(err, "Error de autenticación"))
+      if (!conn && err instanceof ApiError) {
         if (mode === "login" && err.status === 404) {
           setErrorAction({ label: "Crear cuenta con este número", targetMode: "register" })
         } else if (mode === "register" && err.status === 409) {
@@ -105,7 +111,6 @@ export function LoginPage() {
           setErrorAction(null)
         }
       } else {
-        setError("Error de autenticación")
         setErrorAction(null)
       }
     } finally {
@@ -218,8 +223,22 @@ export function LoginPage() {
         )}
 
         {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-3 space-y-2">
-            <p className="text-sm text-red-700">{error}</p>
+          <div
+            className={cn(
+              "space-y-2 rounded-xl border p-3",
+              connectionError
+                ? "border-gray-200 bg-brand-light/50"
+                : "border-red-200 bg-red-50"
+            )}
+          >
+            <p
+              className={cn(
+                "text-sm",
+                connectionError ? "text-gray-700" : "text-red-700"
+              )}
+            >
+              {error}
+            </p>
             {errorAction && (
               <button
                 type="button"

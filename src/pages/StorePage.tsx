@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { StoreAvatar } from "@/components/stores/StoreAvatar"
-import { api, cacheKeys, type Book, type Store } from "@/lib/api"
+import { ConnectionErrorCard } from "@/components/ui/connection-error-card"
+import { api, cacheKeys, isConnectionError, type Book, type Store } from "@/lib/api"
 import { useCachedQuery } from "@/lib/useCachedQuery"
 
 const STORE_TTL_MS = 60_000
@@ -31,7 +32,9 @@ export function StorePage() {
   const {
     data: store,
     loading: loadingStore,
+    isFetching: fetchingStore,
     error: storeError,
+    refetch: refetchStore,
   } = useCachedQuery<Store>({
     key: slug ? cacheKeys.store(slug) : null,
     fetcher: () => api.store(slug as string),
@@ -67,10 +70,21 @@ export function StorePage() {
   }
 
   if (storeError || !store) {
+    if (storeError && isConnectionError(storeError)) {
+      return (
+        <div className="px-4 py-8">
+          <ConnectionErrorCard
+            onRetry={() => void refetchStore()}
+            retrying={fetchingStore}
+            description="No pudimos cargar esta tienda. Comprueba tu conexión a internet e inténtalo de nuevo."
+          />
+        </div>
+      )
+    }
     return (
-      <div className="px-4 py-10 text-center space-y-3">
+      <div className="space-y-3 px-4 py-10 text-center">
         <StoreIcon className="mx-auto h-10 w-10 text-gray-400" />
-        <p className="text-gray-600">{storeError?.message ?? "Tienda no encontrada"}</p>
+        <p className="text-gray-600">Tienda no encontrada</p>
         <Button variant="outline" onClick={() => navigate("/")}>
           Volver al inicio
         </Button>
