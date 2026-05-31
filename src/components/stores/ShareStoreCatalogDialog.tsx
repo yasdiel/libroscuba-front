@@ -1,5 +1,6 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog"
-import { Copy, MessageCircle, Send, Share2, X } from "lucide-react"
+import { Copy, Send, Share2, X } from "lucide-react"
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon"
 import { Button } from "@/components/ui/button"
 import {
   copyTextToClipboard,
@@ -80,7 +81,7 @@ export function ShareStoreCatalogDialog({
               className="w-full justify-start gap-3 bg-[#25D366] text-white hover:bg-[#20bd5a]"
               onClick={shareWhatsApp}
             >
-              <MessageCircle className="h-5 w-5 shrink-0" />
+              <WhatsAppIcon />
               WhatsApp
             </Button>
             <Button
