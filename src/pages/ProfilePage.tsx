@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
-import { LogOut, Pencil, Search, Store, Trash2, Truck } from "lucide-react"
+import { LogOut, Pencil, Search, Share2, Store, Trash2, Truck } from "lucide-react"
+import { ShareStoreCatalogDialog } from "@/components/stores/ShareStoreCatalogDialog"
 import { Navigate, useNavigate } from "react-router-dom"
 import { BookCard } from "@/components/books/BookCard"
 import { BookCardSkeletonGrid } from "@/components/books/BookCardSkeleton"
@@ -36,6 +37,7 @@ export function ProfilePage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [savingPhoto, setSavingPhoto] = useState(false)
   const [photoError, setPhotoError] = useState<string | null>(null)
+  const [shareOpen, setShareOpen] = useState(false)
 
   useEffect(() => {
     setFotoTiendaUrl(user?.foto_tienda_url ?? "")
@@ -210,15 +212,35 @@ export function ProfilePage() {
       </Card>
 
       <Card>
-        <CardContent className="space-y-2 text-sm">
+        <CardContent className="space-y-3 text-sm">
           <p>
             <span className="text-gray-500">Ubicación:</span> {user.municipio}, {user.provincia}
           </p>
           <p>
             <span className="text-gray-500">Teléfono:</span> {user.whatsapp_number}
           </p>
+          {user.tienda_slug ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full gap-2"
+              onClick={() => setShareOpen(true)}
+            >
+              <Share2 className="h-4 w-4" />
+              Compartir catálogo
+            </Button>
+          ) : null}
         </CardContent>
       </Card>
+
+      {user.tienda_slug ? (
+        <ShareStoreCatalogDialog
+          open={shareOpen}
+          onOpenChange={setShareOpen}
+          storeName={user.nombre_tienda}
+          tiendaSlug={user.tienda_slug}
+        />
+      ) : null}
 
       <Card>
         <CardContent className="space-y-3 p-4">
