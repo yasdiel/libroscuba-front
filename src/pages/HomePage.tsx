@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { BookOpen, Loader2, Search } from "lucide-react"
 import { BookCard } from "@/components/books/BookCard"
+import { ElToqueRateNotice } from "@/components/currency/ElToqueRateNotice"
+import { ViewCurrencySelect } from "@/components/currency/ViewCurrencySelect"
 import { ConnectionErrorCard } from "@/components/ui/connection-error-card"
 import { BookCardSkeletonGrid, bookCardGridClass } from "@/components/books/BookCardSkeleton"
 import { BookSheet } from "@/components/books/BookSheet"
@@ -165,6 +167,8 @@ export function HomePage() {
           onProvinciaChange={setProvincia}
           onMunicipioChange={setMunicipio}
         />
+        <ViewCurrencySelect hint="Por defecto CUP. Solo verás conversión si el vendedor acepta esa moneda." />
+        <ElToqueRateNotice />
       </section>
 
       <section className="px-4">

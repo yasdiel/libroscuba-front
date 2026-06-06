@@ -2,6 +2,7 @@ import { Link } from "react-router-dom"
 import { BookOpen, Loader2, MessageCircle, ShoppingCart, Trash2 } from "lucide-react"
 import { BookCover } from "@/components/books/BookCover"
 import { CurrencySelect } from "@/components/currency/CurrencySelect"
+import { ElToqueRateNotice } from "@/components/currency/ElToqueRateNotice"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -28,6 +29,7 @@ export function CartPage() {
           Pedidos separados por tienda. Elige en qué moneda pagar según lo que acepta cada
           vendedor.
         </p>
+        <ElToqueRateNotice className="mt-3 text-paper/75 [&_a]:text-paper [&_a]:underline" />
       </header>
 
       <section className="space-y-4 px-4 py-4">
@@ -98,7 +100,8 @@ export function CartPage() {
                         />
                       </div>
                       <p className="mt-1 text-xs text-gray-500">
-                        Solo monedas aceptadas por los libros de esta tienda.
+                        Solo monedas aceptadas por los libros de esta tienda. Conversión según
+                        tasa elTOQUE.
                       </p>
                     </div>
 

@@ -4,8 +4,9 @@ import { BookCover } from "@/components/books/BookCover"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { useCurrency } from "@/context/CurrencyContext"
 import type { Book } from "@/lib/api"
-import { bookListCoverUrl, cn, formatPrice, whatsappBuyLink } from "@/lib/utils"
+import { bookListCoverUrl, cn, whatsappBuyLink } from "@/lib/utils"
 
 interface BookCardProps {
   book: Book
@@ -15,6 +16,8 @@ interface BookCardProps {
 }
 
 export function BookCard({ book, onClick, actions, className }: BookCardProps) {
+  const { formatPrice, bookDisplayPrice } = useCurrency()
+  const display = bookDisplayPrice(book)
   const buyLink = book.vendedor_whatsapp
     ? whatsappBuyLink(book.vendedor_whatsapp, book.titulo, book.autor)
     : null
@@ -46,9 +49,16 @@ export function BookCard({ book, onClick, actions, className }: BookCardProps) {
             {book.estado === "nuevo" ? "Nuevo" : "Usado"}
           </Badge>
         </div>
-        <p className="text-lg font-bold text-brand">
-          {formatPrice(book.precio, book.moneda || "CUP")}
-        </p>
+        <div>
+          <p className="text-lg font-bold text-brand">
+            {formatPrice(display.amount, display.currency)}
+          </p>
+          {display.converted && (
+            <p className="text-xs text-gray-400">
+              Precio publicado: {formatPrice(display.originalAmount, display.originalCurrency)}
+            </p>
+          )}
+        </div>
         <p className="flex items-center gap-1 text-xs text-gray-500">
           <MapPin className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate">

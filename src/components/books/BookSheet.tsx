@@ -4,7 +4,8 @@ import { BookCover } from "@/components/books/BookCover"
 import { ReportBookDialog } from "@/components/books/ReportBookDialog"
 import { StoreAvatar } from "@/components/stores/StoreAvatar"
 import { useAuth } from "@/context/AuthContext"
-import { ChevronRight, Flag, MapPin, ShoppingBag, Truck } from "lucide-react"
+import { useCurrency } from "@/context/CurrencyContext"
+import { ChevronRight, Coins, Flag, MapPin, ShoppingBag, Truck } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -20,7 +21,8 @@ import {
 import { api, cacheKeys, type Book } from "@/lib/api"
 import { useCachedQuery } from "@/lib/useCachedQuery"
 import { storePath } from "@/lib/storeRoutes"
-import { formatPrice, whatsappBuyLink } from "@/lib/utils"
+import { bookAcceptedCurrencies } from "@/lib/currency"
+import { whatsappBuyLink } from "@/lib/utils"
 
 const BOOK_DETAIL_TTL_MS = 60_000
 
@@ -33,6 +35,7 @@ interface BookSheetProps {
 export function BookSheet({ book, open, onOpenChange }: BookSheetProps) {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { formatPrice, bookDisplayPrice, labelFor } = useCurrency()
   const [reportOpen, setReportOpen] = useState(false)
 
   const { data: detailBook } = useCachedQuery<Book>({
@@ -46,6 +49,8 @@ export function BookSheet({ book, open, onOpenChange }: BookSheetProps) {
 
   // El listado no trae descripción; al abrir el sheet pedimos el libro completo.
   const displayBook = detailBook ?? book
+  const display = bookDisplayPrice(displayBook)
+  const acceptedCurrencies = bookAcceptedCurrencies(displayBook)
 
   const canReport = !user || user.id !== displayBook.owner_id
   const wa = displayBook.vendedor_whatsapp
@@ -83,16 +88,27 @@ export function BookSheet({ book, open, onOpenChange }: BookSheetProps) {
           <div>
             <p className="text-sm text-gray-500">Precio</p>
             <p className="text-2xl font-bold text-brand">
-              {formatPrice(displayBook.precio, displayBook.moneda || "CUP")}
+              {formatPrice(display.amount, display.currency)}
             </p>
-            {displayBook.monedas_aceptadas?.length > 1 && (
+            {display.converted && (
               <p className="mt-1 text-xs text-gray-500">
-                También acepta:{" "}
-                {displayBook.monedas_aceptadas
-                  .filter((m) => m !== (displayBook.moneda || "CUP"))
-                  .join(", ")}
+                Precio publicado: {formatPrice(display.originalAmount, display.originalCurrency)}
               </p>
             )}
+          </div>
+
+          <div className="rounded-2xl border border-gray-100 bg-gray-50/80 p-3">
+            <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-gray-600">
+              <Coins className="h-3.5 w-3.5 text-brand" />
+              Monedas aceptadas
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {acceptedCurrencies.map((code) => (
+                <Badge key={code} variant="secondary" className="text-xs">
+                  {labelFor(code)}
+                </Badge>
+              ))}
+            </div>
           </div>
           <div className="flex items-start gap-2 text-sm text-gray-600">
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand" />

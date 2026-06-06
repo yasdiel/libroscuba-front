@@ -13,6 +13,10 @@ import {
   convertAmount,
   formatMoney,
   ratesMap,
+  resolveBookDisplayPrice,
+  VIEW_CURRENCY_STORAGE_KEY,
+  type BookDisplayPrice,
+  type BookPriceInput,
   type CurrencyInfo,
 } from "@/lib/currency"
 
@@ -20,9 +24,12 @@ interface CurrencyContextValue {
   currencies: CurrencyInfo[]
   loading: boolean
   rates: Record<string, number>
+  viewCurrency: string
+  setViewCurrency: (code: string) => void
   formatPrice: (amount: number, currency: string) => string
   convert: (amount: number, from: string, to: string) => number
   labelFor: (code: string) => string
+  bookDisplayPrice: (book: BookPriceInput) => BookDisplayPrice
 }
 
 const FALLBACK: CurrencyInfo[] = [
@@ -31,9 +38,20 @@ const FALLBACK: CurrencyInfo[] = [
 
 const CurrencyContext = createContext<CurrencyContextValue | null>(null)
 
+function loadViewCurrency(): string {
+  try {
+    const stored = localStorage.getItem(VIEW_CURRENCY_STORAGE_KEY)
+    if (stored) return stored.toUpperCase()
+  } catch {
+    /* ignore */
+  }
+  return BASE_CURRENCY
+}
+
 export function CurrencyProvider({ children }: { children: ReactNode }) {
   const [currencies, setCurrencies] = useState<CurrencyInfo[]>(FALLBACK)
   const [loading, setLoading] = useState(true)
+  const [viewCurrency, setViewCurrencyState] = useState(loadViewCurrency)
 
   const load = useCallback(async () => {
     try {
@@ -50,6 +68,16 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     void load()
   }, [load])
 
+  const setViewCurrency = useCallback((code: string) => {
+    const next = code.toUpperCase()
+    setViewCurrencyState(next)
+    try {
+      localStorage.setItem(VIEW_CURRENCY_STORAGE_KEY, next)
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
   const rates = useMemo(() => ratesMap(currencies), [currencies])
 
   const labelFor = useCallback(
@@ -57,16 +85,24 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     [currencies]
   )
 
+  const bookDisplayPrice = useCallback(
+    (book: BookPriceInput) => resolveBookDisplayPrice(book, viewCurrency, rates),
+    [viewCurrency, rates]
+  )
+
   const value = useMemo<CurrencyContextValue>(
     () => ({
       currencies,
       loading,
       rates,
+      viewCurrency,
+      setViewCurrency,
       formatPrice: (amount, currency) => formatMoney(amount, currency),
       convert: (amount, from, to) => convertAmount(amount, from, to, rates),
       labelFor,
+      bookDisplayPrice,
     }),
-    [currencies, loading, rates, labelFor]
+    [currencies, loading, rates, viewCurrency, setViewCurrency, labelFor, bookDisplayPrice]
   )
 
   return <CurrencyContext.Provider value={value}>{children}</CurrencyContext.Provider>
