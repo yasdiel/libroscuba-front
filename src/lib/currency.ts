@@ -1,5 +1,18 @@
 export const BASE_CURRENCY = "CUP"
 
+/** Monedas habilitadas en la app (tasas vía elTOQUE). */
+export const SUPPORTED_CURRENCIES = ["CUP", "USD", "EUR", "MLC"] as const
+export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number]
+
+export function isSupportedCurrency(code: string): code is SupportedCurrency {
+  return SUPPORTED_CURRENCIES.includes(code.toUpperCase() as SupportedCurrency)
+}
+
+export function filterSupportedCurrencies(currencies: CurrencyInfo[]): CurrencyInfo[] {
+  const allowed = new Set<string>(SUPPORTED_CURRENCIES)
+  return currencies.filter((c) => allowed.has(c.code))
+}
+
 export interface CurrencyInfo {
   code: string
   label: string

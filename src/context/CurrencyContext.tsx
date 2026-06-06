@@ -11,9 +11,12 @@ import { api } from "@/lib/api"
 import {
   BASE_CURRENCY,
   convertAmount,
+  filterSupportedCurrencies,
   formatMoney,
+  isSupportedCurrency,
   ratesMap,
   resolveBookDisplayPrice,
+  SUPPORTED_CURRENCIES,
   VIEW_CURRENCY_STORAGE_KEY,
   type BookDisplayPrice,
   type BookPriceInput,
@@ -32,16 +35,25 @@ interface CurrencyContextValue {
   bookDisplayPrice: (book: BookPriceInput) => BookDisplayPrice
 }
 
-const FALLBACK: CurrencyInfo[] = [
-  { code: BASE_CURRENCY, label: "Peso cubano (CUP)", rate_cup: 1 },
-]
+const FALLBACK: CurrencyInfo[] = SUPPORTED_CURRENCIES.map((code) => ({
+  code,
+  label:
+    code === "CUP"
+      ? "Peso cubano (CUP)"
+      : code === "USD"
+        ? "Dólar (USD)"
+        : code === "EUR"
+          ? "Euro (EUR)"
+          : "MLC",
+  rate_cup: code === "CUP" ? 1 : 0,
+}))
 
 const CurrencyContext = createContext<CurrencyContextValue | null>(null)
 
 function loadViewCurrency(): string {
   try {
     const stored = localStorage.getItem(VIEW_CURRENCY_STORAGE_KEY)
-    if (stored) return stored.toUpperCase()
+    if (stored && isSupportedCurrency(stored)) return stored.toUpperCase()
   } catch {
     /* ignore */
   }
@@ -56,7 +68,10 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   const load = useCallback(async () => {
     try {
       const data = await api.currencies()
-      if (data.currencies?.length) setCurrencies(data.currencies)
+      if (data.currencies?.length) {
+        const filtered = filterSupportedCurrencies(data.currencies)
+        if (filtered.length) setCurrencies(filtered)
+      }
     } catch {
       setCurrencies(FALLBACK)
     } finally {
@@ -70,6 +85,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
 
   const setViewCurrency = useCallback((code: string) => {
     const next = code.toUpperCase()
+    if (!isSupportedCurrency(next)) return
     setViewCurrencyState(next)
     try {
       localStorage.setItem(VIEW_CURRENCY_STORAGE_KEY, next)

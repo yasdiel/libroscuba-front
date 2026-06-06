@@ -167,7 +167,7 @@ export function HomePage() {
           onProvinciaChange={setProvincia}
           onMunicipioChange={setMunicipio}
         />
-        <ViewCurrencySelect hint="Por defecto CUP. Solo verás conversión si el vendedor acepta esa moneda." />
+        <ViewCurrencySelect />
         <ElToqueRateNotice />
       </section>
 
