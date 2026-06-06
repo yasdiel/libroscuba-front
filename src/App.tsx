@@ -3,6 +3,7 @@ import { AppLayout } from "@/components/layout/AppLayout"
 import { SnackbarHost } from "@/components/ui/snackbar-host"
 import { AuthProvider } from "@/context/AuthContext"
 import { CartProvider } from "@/context/CartContext"
+import { CurrencyProvider } from "@/context/CurrencyContext"
 import { AdminPage } from "@/pages/AdminPage"
 import { HomePage } from "@/pages/HomePage"
 import { LoginPage } from "@/pages/LoginPage"
@@ -15,9 +16,10 @@ import { TermsPage } from "@/pages/TermsPage"
 export default function App() {
   return (
     <AuthProvider>
-      <CartProvider>
-        <SnackbarHost />
-        <HashRouter>
+      <CurrencyProvider>
+        <CartProvider>
+          <SnackbarHost />
+          <HashRouter>
         <Routes>
           <Route element={<AppLayout />}>
             <Route index element={<HomePage />} />
@@ -32,7 +34,8 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </HashRouter>
-      </CartProvider>
+        </CartProvider>
+      </CurrencyProvider>
     </AuthProvider>
   )
 }

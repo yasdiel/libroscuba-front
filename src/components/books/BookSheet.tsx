@@ -82,7 +82,17 @@ export function BookSheet({ book, open, onOpenChange }: BookSheetProps) {
           </div>
           <div>
             <p className="text-sm text-gray-500">Precio</p>
-            <p className="text-2xl font-bold text-brand">{formatPrice(displayBook.precio)}</p>
+            <p className="text-2xl font-bold text-brand">
+              {formatPrice(displayBook.precio, displayBook.moneda || "CUP")}
+            </p>
+            {displayBook.monedas_aceptadas?.length > 1 && (
+              <p className="mt-1 text-xs text-gray-500">
+                También acepta:{" "}
+                {displayBook.monedas_aceptadas
+                  .filter((m) => m !== (displayBook.moneda || "CUP"))
+                  .join(", ")}
+              </p>
+            )}
           </div>
           <div className="flex items-start gap-2 text-sm text-gray-600">
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand" />

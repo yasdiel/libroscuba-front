@@ -398,7 +398,7 @@ export function AdminPage() {
                       <p className="font-semibold text-gray-900">{report.titulo}</p>
                       <p className="text-sm text-gray-500">{report.autor}</p>
                       <p className="mt-1 text-sm font-medium text-brand">
-                        {formatPrice(report.precio)}
+                        {formatPrice(report.precio, report.moneda || "CUP")}
                       </p>
                       <Badge variant="secondary" className="mt-2">
                         {REASON_LABELS[report.reason] ?? report.reason}
@@ -522,7 +522,9 @@ export function AdminPage() {
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-gray-900 truncate">{book.titulo}</p>
                     <p className="text-sm text-gray-500 truncate">{book.autor}</p>
-                    <p className="mt-1 text-sm font-medium text-brand">{formatPrice(book.precio)}</p>
+                    <p className="mt-1 text-sm font-medium text-brand">
+                      {formatPrice(book.precio, book.moneda || "CUP")}
+                    </p>
                     {book.owner_whatsapp && (
                       <p className="text-xs text-gray-400 truncate">{book.owner_whatsapp}</p>
                     )}

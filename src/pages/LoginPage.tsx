@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { BookOpen } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
+import { CurrencyMultiSelect } from "@/components/currency/CurrencyMultiSelect"
 import { LocationFilter } from "@/components/filters/LocationFilter"
 import { MunicipiosEnvioSelect } from "@/components/filters/MunicipiosEnvioSelect"
 import { Button } from "@/components/ui/button"
@@ -11,6 +12,7 @@ import { PasswordInput } from "@/components/ui/password-input"
 import { PhoneInput } from "@/components/ui/phone-input"
 import { useAuth } from "@/context/AuthContext"
 import { api, ApiError, isConnectionError, userFacingErrorMessage } from "@/lib/api"
+import { BASE_CURRENCY } from "@/lib/currency"
 import { cn } from "@/lib/utils"
 import {
   formatPhoneForApi,
@@ -36,6 +38,7 @@ export function LoginPage() {
   const [provincia, setProvincia] = useState("")
   const [municipio, setMunicipio] = useState("")
   const [municipiosEnvio, setMunicipiosEnvio] = useState<string[]>([])
+  const [monedasAceptadas, setMonedasAceptadas] = useState<string[]>([BASE_CURRENCY])
   const [accepted, setAccepted] = useState(false)
   const [error, setError] = useState("")
   const [connectionError, setConnectionError] = useState(false)
@@ -86,6 +89,11 @@ export function LoginPage() {
           setLoading(false)
           return
         }
+        if (monedasAceptadas.length === 0) {
+          setError("Selecciona al menos una moneda que aceptas")
+          setLoading(false)
+          return
+        }
         await register({
           whatsapp_number,
           password,
@@ -93,6 +101,7 @@ export function LoginPage() {
           provincia,
           municipio,
           municipios_envio: municipiosEnvio,
+          monedas_aceptadas: monedasAceptadas,
           accepted_terms: true,
         })
       }
@@ -202,6 +211,14 @@ export function LoginPage() {
               onChange={setMunicipiosEnvio}
               excludeMunicipio={municipio}
             />
+            <div className="space-y-1.5">
+              <Label>Monedas que aceptas *</Label>
+              <CurrencyMultiSelect
+                value={monedasAceptadas}
+                onChange={setMonedasAceptadas}
+                hint="Los compradores podrán pagarte en estas monedas. Tasas según elTOQUE."
+              />
+            </div>
             <div className="flex gap-3 items-center">
               <Checkbox
                 id="terms"

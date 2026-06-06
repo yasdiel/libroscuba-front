@@ -53,6 +53,8 @@ function invalidateStores(): void {
   cacheInvalidate(cacheKeys.adminStats())
 }
 
+import type { CurrenciesResponse } from "@/lib/currency"
+
 export type EstadoLibro = "nuevo" | "usado"
 
 export interface User {
@@ -63,6 +65,7 @@ export interface User {
   nombre_tienda: string
   tienda_slug: string
   municipios_envio: string[]
+  monedas_aceptadas: string[]
   is_admin: boolean
   foto_tienda_url?: string | null
 }
@@ -73,6 +76,8 @@ export interface Book {
   titulo: string
   autor: string
   precio: number
+  moneda: string
+  monedas_aceptadas: string[]
   foto_url: string
   descripcion?: string | null
   estado: EstadoLibro
@@ -116,6 +121,7 @@ export interface ReportedBook {
   titulo: string
   autor: string
   precio: number
+  moneda?: string
   foto_url: string
   estado: string
   provincia: string
@@ -278,6 +284,7 @@ export const api = {
   health: () => request<{ status: string }>("/api/health"),
   locations: () =>
     request<LocationsResponse | Record<string, string[]>>("/api/locations"),
+  currencies: () => request<CurrenciesResponse>("/api/currencies"),
   login: (whatsapp_number: string, password: string) =>
     request<{ access_token: string }>("/api/auth/login", {
       method: "POST",
@@ -290,6 +297,7 @@ export const api = {
     municipio: string
     nombre_tienda: string
     municipios_envio?: string[]
+    monedas_aceptadas?: string[]
     accepted_terms: boolean
   }) =>
     request<{ access_token: string }>("/api/auth/register", {

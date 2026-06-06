@@ -1,12 +1,14 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
+import { formatMoney } from "@/lib/currency"
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatPrice(price: number) {
-  return `${price.toFixed(0)} CUP`
+export function formatPrice(price: number, currency = "CUP") {
+  return formatMoney(price, currency)
 }
 
 /** URL más liviana para portadas en rejillas (Cloudinary / Unsplash). */
@@ -43,14 +45,15 @@ export function whatsappBuyLink(
 export function whatsappCartOrderLink(
   phone: string,
   storeName: string,
-  lines: { titulo: string; autor: string; precio: number }[]
+  lines: { titulo: string; autor: string; precio: number; moneda: string }[],
+  totalCurrency: string
 ): string | null {
   if (!phone || lines.length === 0) return null
   const clean = phone.replace(/\D/g, "")
   const detail = lines
     .map(
       (line, i) =>
-        `${i + 1}. «${line.titulo}» — ${line.autor} — ${line.precio.toFixed(0)} CUP`
+        `${i + 1}. «${line.titulo}» — ${line.autor} — ${formatPrice(line.precio, line.moneda)}`
     )
     .join("\n")
   const total = lines.reduce((sum, l) => sum + l.precio, 0)
@@ -59,7 +62,7 @@ export function whatsappCartOrderLink(
     "",
     detail,
     "",
-    `Total: ${total.toFixed(0)} CUP`,
+    `Total: ${formatPrice(total, totalCurrency)}`,
   ].join("\n")
   return `https://wa.me/${clean}?text=${encodeURIComponent(body)}`
 }

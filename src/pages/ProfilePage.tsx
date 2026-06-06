@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
-import { LogOut, Pencil, Search, Share2, Store, Trash2, Truck } from "lucide-react"
+import { Coins, LogOut, Pencil, Search, Share2, Store, Trash2, Truck } from "lucide-react"
+import { CurrencyMultiSelect } from "@/components/currency/CurrencyMultiSelect"
 import { ShareStoreCatalogDialog } from "@/components/stores/ShareStoreCatalogDialog"
 import { Navigate, useNavigate } from "react-router-dom"
 import { BookCard } from "@/components/books/BookCard"
@@ -30,6 +31,10 @@ export function ProfilePage() {
   const [shippingDraft, setShippingDraft] = useState<string[]>([])
   const [savingShipping, setSavingShipping] = useState(false)
   const [shippingError, setShippingError] = useState<string | null>(null)
+  const [editingCurrencies, setEditingCurrencies] = useState(false)
+  const [currenciesDraft, setCurrenciesDraft] = useState<string[]>([])
+  const [savingCurrencies, setSavingCurrencies] = useState(false)
+  const [currenciesError, setCurrenciesError] = useState<string | null>(null)
   const [deletingBook, setDeletingBook] = useState<Book | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [confirmLogout, setConfirmLogout] = useState(false)
@@ -99,6 +104,32 @@ export function ProfilePage() {
     setEditingShipping(true)
   }
 
+  const startEditCurrencies = () => {
+    setCurrenciesDraft(user?.monedas_aceptadas ?? ["CUP"])
+    setCurrenciesError(null)
+    setEditingCurrencies(true)
+  }
+
+  const saveCurrencies = async () => {
+    if (currenciesDraft.length === 0) {
+      setCurrenciesError("Selecciona al menos una moneda")
+      return
+    }
+    setSavingCurrencies(true)
+    setCurrenciesError(null)
+    try {
+      await api.updateProfile({ monedas_aceptadas: currenciesDraft })
+      await refreshUser()
+      setEditingCurrencies(false)
+    } catch (err) {
+      setCurrenciesError(
+        err instanceof ApiError ? err.message : "No se pudieron guardar las monedas"
+      )
+    } finally {
+      setSavingCurrencies(false)
+    }
+  }
+
   const saveShipping = async () => {
     setSavingShipping(true)
     setShippingError(null)
@@ -158,6 +189,7 @@ export function ProfilePage() {
         <h1 className="mb-4 text-xl font-bold">Editar libro</h1>
         <BookForm
           initial={editing}
+          defaultMonedasAceptadas={user.monedas_aceptadas}
           onSubmit={handleUpdateBook}
           onCancel={() => setEditing(null)}
           submitLabel="Guardar cambios"
@@ -241,6 +273,54 @@ export function ProfilePage() {
           tiendaSlug={user.tienda_slug}
         />
       ) : null}
+
+      <Card>
+        <CardContent className="space-y-3 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Coins className="h-4 w-4 text-brand" />
+              <h3 className="font-semibold text-gray-900">Monedas aceptadas</h3>
+            </div>
+            {!editingCurrencies && (
+              <Button size="sm" variant="secondary" onClick={startEditCurrencies}>
+                Editar
+              </Button>
+            )}
+          </div>
+
+          {!editingCurrencies ? (
+            <div className="flex flex-wrap gap-1.5">
+              {(user.monedas_aceptadas?.length ? user.monedas_aceptadas : ["CUP"]).map((m) => (
+                <Badge key={m} variant="secondary">
+                  {m}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <CurrencyMultiSelect
+                value={currenciesDraft}
+                onChange={setCurrenciesDraft}
+                hint="Estas monedas se usarán por defecto al publicar libros."
+              />
+              {currenciesError && <p className="text-sm text-red-600">{currenciesError}</p>}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setEditingCurrencies(false)}
+                  disabled={savingCurrencies}
+                >
+                  Cancelar
+                </Button>
+                <Button className="flex-1" onClick={saveCurrencies} disabled={savingCurrencies}>
+                  {savingCurrencies ? "Guardando..." : "Guardar"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="space-y-3 p-4">

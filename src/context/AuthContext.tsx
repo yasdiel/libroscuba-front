@@ -23,6 +23,7 @@ interface AuthContextValue {
     municipio: string
     nombre_tienda: string
     municipios_envio?: string[]
+    monedas_aceptadas?: string[]
     accepted_terms: boolean
   }) => Promise<void>
   logout: () => void

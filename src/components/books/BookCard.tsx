@@ -46,7 +46,9 @@ export function BookCard({ book, onClick, actions, className }: BookCardProps) {
             {book.estado === "nuevo" ? "Nuevo" : "Usado"}
           </Badge>
         </div>
-        <p className="text-lg font-bold text-brand">{formatPrice(book.precio)}</p>
+        <p className="text-lg font-bold text-brand">
+          {formatPrice(book.precio, book.moneda || "CUP")}
+        </p>
         <p className="flex items-center gap-1 text-xs text-gray-500">
           <MapPin className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate">

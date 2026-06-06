@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react"
+import { CurrencyMultiSelect } from "@/components/currency/CurrencyMultiSelect"
+import { CurrencySelect } from "@/components/currency/CurrencySelect"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,12 +15,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { CloudinaryImageField } from "@/components/media/CloudinaryImageField"
 import { LocationFilter } from "@/components/filters/LocationFilter"
 import { isRemoteImageUrl, UPLOADING_IMAGE_MESSAGE } from "@/lib/cloudinary"
+import { BASE_CURRENCY } from "@/lib/currency"
 import type { Book, EstadoLibro } from "@/lib/api"
 
 export interface BookFormData {
   titulo: string
   autor: string
   precio: number
+  moneda: string
+  monedas_aceptadas: string[]
   foto_url: string
   descripcion: string
   estado: EstadoLibro
@@ -29,6 +34,7 @@ export interface BookFormData {
 interface BookFormProps {
   initial?: Book
   defaultLocation?: { provincia: string; municipio: string }
+  defaultMonedasAceptadas?: string[]
   onSubmit: (data: BookFormData) => Promise<void>
   onCancel?: () => void
   submitLabel?: string
@@ -37,13 +43,21 @@ interface BookFormProps {
 export function BookForm({
   initial,
   defaultLocation,
+  defaultMonedasAceptadas,
   onSubmit,
   onCancel,
   submitLabel = "Publicar libro",
 }: BookFormProps) {
+  const profileMonedas =
+    defaultMonedasAceptadas?.length ? defaultMonedasAceptadas : [BASE_CURRENCY]
+
   const [titulo, setTitulo] = useState(initial?.titulo ?? "")
   const [autor, setAutor] = useState(initial?.autor ?? "")
   const [precio, setPrecio] = useState(initial?.precio?.toString() ?? "")
+  const [moneda, setMoneda] = useState(initial?.moneda ?? profileMonedas[0] ?? BASE_CURRENCY)
+  const [monedasAceptadas, setMonedasAceptadas] = useState<string[]>(
+    initial?.monedas_aceptadas?.length ? initial.monedas_aceptadas : [...profileMonedas]
+  )
   const [fotoUrl, setFotoUrl] = useState(initial?.foto_url ?? "")
   const [descripcion, setDescripcion] = useState(initial?.descripcion ?? "")
   const [estado, setEstado] = useState<EstadoLibro>(initial?.estado ?? "usado")
@@ -64,6 +78,22 @@ export function BookForm({
     }
   }, [defaultLocation, initial])
 
+  useEffect(() => {
+    if (!initial && defaultMonedasAceptadas?.length) {
+      setMonedasAceptadas([...defaultMonedasAceptadas])
+      setMoneda((prev) =>
+        defaultMonedasAceptadas.includes(prev) ? prev : defaultMonedasAceptadas[0]
+      )
+    }
+  }, [defaultMonedasAceptadas, initial])
+
+  const handleMonedaChange = (code: string) => {
+    setMoneda(code)
+    if (!monedasAceptadas.includes(code)) {
+      setMonedasAceptadas([...monedasAceptadas, code])
+    }
+  }
+
   const photoReady = isRemoteImageUrl(fotoUrl)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,12 +108,22 @@ export function BookForm({
       setError("Completa todos los campos obligatorios")
       return
     }
+    if (!monedasAceptadas.length) {
+      setError("Selecciona al menos una moneda aceptada")
+      return
+    }
+    if (!monedasAceptadas.includes(moneda)) {
+      setError("La moneda del precio debe estar entre las monedas aceptadas")
+      return
+    }
     setSaving(true)
     try {
       await onSubmit({
         titulo,
         autor,
         precio: price,
+        moneda,
+        monedas_aceptadas: monedasAceptadas,
         foto_url: fotoUrl,
         descripcion: descripcion || "",
         estado,
@@ -118,32 +158,55 @@ export function BookForm({
         <Label htmlFor="autor">Autor *</Label>
         <Input id="autor" value={autor} onChange={(e) => setAutor(e.target.value)} required />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+
+      <div className="space-y-3 rounded-xl border border-gray-100 bg-gray-50/80 p-3">
+        <p className="text-sm font-medium text-gray-900">Precio y monedas</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="precio">Precio *</Label>
+            <Input
+              id="precio"
+              type="number"
+              min="0.01"
+              step="any"
+              value={precio}
+              onChange={(e) => setPrecio(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Moneda del precio *</Label>
+            <CurrencySelect
+              value={moneda}
+              onChange={handleMonedaChange}
+              allowed={profileMonedas}
+            />
+          </div>
+        </div>
         <div className="space-y-1.5">
-          <Label htmlFor="precio">Precio (CUP) *</Label>
-          <Input
-            id="precio"
-            type="number"
-            min="1"
-            step="1"
-            value={precio}
-            onChange={(e) => setPrecio(e.target.value)}
-            required
+          <Label>Monedas que aceptas para este libro</Label>
+          <CurrencyMultiSelect
+            value={monedasAceptadas}
+            onChange={setMonedasAceptadas}
+            allowed={profileMonedas}
+            hint="Por defecto las de tu perfil. Puedes quitar o añadir entre las que acepta tu tienda."
           />
         </div>
-        <div className="space-y-1.5">
-          <Label>Estado *</Label>
-          <Select value={estado} onValueChange={(v) => setEstado(v as EstadoLibro)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="nuevo">Nuevo</SelectItem>
-              <SelectItem value="usado">Usado</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
       </div>
+
+      <div className="space-y-1.5">
+        <Label>Estado *</Label>
+        <Select value={estado} onValueChange={(v) => setEstado(v as EstadoLibro)}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="nuevo">Nuevo</SelectItem>
+            <SelectItem value="usado">Usado</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <LocationFilter
         provincia={provincia}
         municipio={municipio}

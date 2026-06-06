@@ -8,7 +8,8 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import { api } from "@/lib/api"
+import { useCurrency } from "@/context/CurrencyContext"
+import { api, type Book } from "@/lib/api"
 import {
   bookToCartItem,
   cartItemCount,
@@ -19,7 +20,6 @@ import {
   type CartStoreGroup,
 } from "@/lib/cart"
 import { showSnackbar } from "@/lib/snackbar"
-import type { Book } from "@/lib/api"
 
 interface CartContextValue {
   items: CartItem[]
@@ -30,6 +30,7 @@ interface CartContextValue {
   isInCart: (bookId: string) => boolean
   addBook: (book: Book) => boolean
   removeItem: (bookId: string) => void
+  setStorePaymentCurrency: (ownerId: string, currency: string) => void
   clearCart: () => void
   syncCart: () => Promise<void>
 }
@@ -48,28 +49,34 @@ function itemsFromBooks(books: Book[], previous: CartItem[]): CartItem[] {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() => loadCartFromStorage())
+  const { rates } = useCurrency()
+  const initial = loadCartFromStorage()
+  const [items, setItems] = useState<CartItem[]>(initial.items)
+  const [paymentByStore, setPaymentByStore] = useState<Record<string, string>>(
+    initial.paymentByStore
+  )
   const [syncing, setSyncing] = useState(false)
   const [hydrated, setHydrated] = useState(false)
   const syncStarted = useRef(false)
 
-  const persist = useCallback((next: CartItem[]) => {
-    setItems(next)
-    saveCartToStorage(next)
-  }, [])
+  const persist = useCallback((nextItems: CartItem[], nextPayment = paymentByStore) => {
+    setItems(nextItems)
+    setPaymentByStore(nextPayment)
+    saveCartToStorage({ items: nextItems, paymentByStore: nextPayment })
+  }, [paymentByStore])
 
   const syncCart = useCallback(async () => {
     const stored = loadCartFromStorage()
-    if (stored.length === 0) {
-      persist([])
+    if (stored.items.length === 0) {
+      persist([], {})
       return
     }
     setSyncing(true)
     try {
-      const books = await api.cartSync(stored.map((i) => i.bookId))
-      const next = itemsFromBooks(books, stored)
-      persist(next)
-      const removed = stored.length - next.length
+      const books = await api.cartSync(stored.items.map((i) => i.bookId))
+      const nextItems = itemsFromBooks(books, stored.items)
+      persist(nextItems, stored.paymentByStore)
+      const removed = stored.items.length - nextItems.length
       if (removed > 0) {
         showSnackbar(
           removed === 1
@@ -118,9 +125,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [items, persist]
   )
 
-  const clearCart = useCallback(() => persist([]), [persist])
+  const setStorePaymentCurrency = useCallback(
+    (ownerId: string, currency: string) => {
+      persist(items, { ...paymentByStore, [ownerId]: currency })
+    },
+    [items, paymentByStore, persist]
+  )
 
-  const groups = useMemo(() => groupCartByStore(items), [items])
+  const clearCart = useCallback(() => persist([], {}), [persist])
+
+  const groups = useMemo(
+    () => groupCartByStore(items, paymentByStore, rates),
+    [items, paymentByStore, rates]
+  )
   const count = cartItemCount(items)
 
   const value = useMemo(
@@ -133,10 +150,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
       isInCart,
       addBook,
       removeItem,
+      setStorePaymentCurrency,
       clearCart,
       syncCart,
     }),
-    [items, groups, count, syncing, hydrated, isInCart, addBook, removeItem, clearCart, syncCart]
+    [
+      items,
+      groups,
+      count,
+      syncing,
+      hydrated,
+      isInCart,
+      addBook,
+      removeItem,
+      setStorePaymentCurrency,
+      clearCart,
+      syncCart,
+    ]
   )
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>

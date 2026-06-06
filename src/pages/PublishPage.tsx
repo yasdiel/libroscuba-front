@@ -35,6 +35,7 @@ export function PublishPage() {
       <h1 className="mb-4 text-xl font-bold">Publicar libro</h1>
       <BookForm
         defaultLocation={{ provincia: user.provincia, municipio: user.municipio }}
+        defaultMonedasAceptadas={user.monedas_aceptadas}
         onSubmit={handleSubmit}
         submitLabel="Publicar libro"
       />
